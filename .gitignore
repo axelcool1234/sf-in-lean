@@ -1,6 +1,12 @@
 .lake
 .DS_Store
-_out/
+_out/*/grading
+_out/*/terse
+_out/*/solutions
+_out/hl
+_out/ts
+_out/*/*/html
+_out/*/*/html-multi
 release/
 __pycache__/
 # Rough-draft intermediates from a one-off `to_verso.py` port of a .v/.lean
