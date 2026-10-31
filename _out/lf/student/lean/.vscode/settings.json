@@ -1,0 +1,43 @@
+// Generated from the repository's own .vscode/settings.json -- edit it there,
+// not here (see `studentSettingKeys` in SFLMeta/Save/Project.lean).
+{"lean4.input.customTranslations": {"tc": "⦂", "llrr": "↞↠"},
+ "editor.tokenColorCustomizations":
+ {"textMateRules":
+  [{"settings": {"foreground": "#94795A"},
+    "scope":
+    ["comment.line.double-dash.lean4",
+     "comment.block.lean4",
+     "comment.block.documentation.lean4"]},
+   {"settings": {"foreground": "#A57A49"},
+    "scope":
+    ["comment markup.italic.markdown",
+     "comment markup.bold.markdown",
+     "comment punctuation.definition.italic.markdown",
+     "comment punctuation.definition.bold.markdown"]}],
+  "[*Light*]":
+  {"textMateRules":
+   [{"settings": {"foreground": "#4A3520"},
+     "scope":
+     ["comment.line.double-dash.lean4",
+      "comment.block.lean4",
+      "comment.block.documentation.lean4"]},
+    {"settings": {"foreground": "#573513"},
+     "scope":
+     ["comment markup.italic.markdown",
+      "comment markup.bold.markdown",
+      "comment punctuation.definition.italic.markdown",
+      "comment punctuation.definition.bold.markdown"]}]},
+  "[*Dark*]":
+  {"textMateRules":
+   [{"settings": {"foreground": "#DEC5A0"},
+     "scope":
+     ["comment.line.double-dash.lean4",
+      "comment.block.lean4",
+      "comment.block.documentation.lean4"]},
+    {"settings": {"foreground": "#F1C98D"},
+     "scope":
+     ["comment markup.italic.markdown",
+      "comment markup.bold.markdown",
+      "comment punctuation.definition.italic.markdown",
+      "comment punctuation.definition.bold.markdown"]}]}},
+ "[lean4]": {"editor.wordWrap": "on"}}
