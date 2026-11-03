@@ -179,7 +179,8 @@ sf_recall statement add_succ : ∀ n m : Nat, n + (succ m) = succ (n + m)
 --  from Basics:
 
 theorem succ_eq_add_one (n : Nat) : succ n = n + one := by
-  sorry
+  rewrite [one, add_one, add_zero]
+  rfl
 
 --  ## Proof by Induction
 
@@ -317,19 +318,44 @@ theorem beq_self (n : Nat) : (n == n) = true := by
 
 theorem zero_mul (n : Nat) :
     zero * n = zero := by
-  sorry
+  induction n with
+  | zero => 
+    rewrite [mul_zero]
+    rfl
+  | succ n' ih =>
+    rewrite [mul_succ, add_zero, ih]
+    rfl
+
 
 theorem succ_add (n m : Nat) :
     (succ n) + m = succ (n + m) := by
-  sorry
+  induction m with
+  | zero => 
+    rewrite [add_zero, add_zero]
+    rfl
+  | succ m' ih =>
+    rewrite [add_succ, add_succ, ih]
+    rfl
 
 theorem add_comm (n m : Nat) :
     n + m = m + n := by
-  sorry
+  induction m with
+  | zero => 
+    rewrite [add_zero, zero_add]
+    rfl
+  | succ m' ih =>
+    rewrite [add_succ, succ_add, ih]
+    rfl
 
 theorem add_assoc (n m p : Nat) :
     n + (m + p) = (n + m) + p := by
-  sorry
+  induction p with
+  | zero =>
+    rewrite [add_zero, add_zero]
+    rfl
+  | succ p' ih =>
+    rewrite [add_succ, add_succ, add_succ, ih]
+    rfl
 
 --  ### Tip: The `rw` Tactic
 
@@ -381,7 +407,11 @@ attribute [irreducible] double
 --  instead of `rewrite`.
 
 theorem double_add (n : Nat) : double n = n + n := by
-  sorry
+  induction n with
+  | zero => 
+    rw [add_zero, double_zero]
+  | succ n' ih =>
+    rw [add_succ, succ_add, double_succ, ih]
 
 --  ## Proofs Within Proofs
 
@@ -648,7 +678,11 @@ theorem add_comm' (n m : Nat) : n + m = m + n := by
 
 theorem mul_one (p : Nat) :
     one * p = p := by
-  sorry
+  induction p with
+  | zero => 
+    rw [mul_zero]
+  | succ p' ih =>
+    rw [mul_succ, ih, one, add_succ, add_zero]
 
 --  (End of exercise)
 
@@ -661,7 +695,11 @@ theorem mul_one (p : Nat) :
 
 theorem mul_two (p : Nat) :
     two * p = p + p := by
-  sorry
+  induction p with
+  | zero => 
+    rw [mul_zero, add_zero]
+  | succ p' ih =>
+    rw [mul_succ, add_succ, succ_add, ←ih, two, one, add_succ, add_succ, add_zero]
 
 --  ### Exercise (3 stars): mul_comm ⭐⭐⭐
 
@@ -669,17 +707,25 @@ theorem mul_two (p : Nat) :
 --  `add_shuffle3`. You don't need to use induction.
 
 theorem add_shuffle3 (n m p : Nat) : n + m + p = n + p + m := by
-  sorry
+  rw [add_comm, add_comm n p, add_assoc]
 
 theorem succ_mul (m n : Nat) :
     (succ n) * m = (n * m) + m := by
-  sorry
+  induction m with
+  | zero =>
+    rw [mul_zero, mul_zero, add_zero]
+  | succ m' ih =>
+    rw [mul_succ, ih, add_succ, add_succ, mul_succ, add_shuffle3]
 
 --  Now prove commutativity of multiplication.
 
 theorem mul_comm (m n : Nat) :
     m * n = n * m := by
-  sorry
+  induction n with
+  | zero =>
+    rw [mul_zero, zero_mul]
+  | succ n' ih =>
+    rw [mul_succ, succ_mul, ih]
 
 --  ### Exercise (3 stars): more_exercises (Optional) ⭐⭐⭐
 
@@ -692,27 +738,50 @@ theorem mul_comm (m n : Nat) :
 
 theorem ble_refl (n : Nat) :
     Nat.ble n n = true := by
-  sorry
+  induction n with
+  | zero =>
+    rw [zero_ble]
+  | succ n' ih =>
+    rw [succ_ble_succ, ih]
 
 theorem andb_false (b : Bool) :
     (b && false) = false := by
-  sorry
+  cases b with
+  | false => rfl
+  | true => rfl
 
 theorem all3_spec (b c : Bool) :
     ((b && c) || ((!b) || (!c))) = true := by
-  sorry
+  cases c with
+  | false => 
+    rw [andb_false]
+    cases b with
+    | false => rfl
+    | true => rfl
+  | true =>
+    cases b with
+    | false => rfl
+    | true => rfl
 
 theorem right_distrib (n m p : Nat) :
     (n + m) * p = (n * p) + (m * p) := by
-  sorry
+  induction p with
+  | zero => 
+    rw [mul_zero, mul_zero, mul_zero, add_zero]
+  | succ p' ih =>
+    rw [mul_succ, mul_succ, mul_succ, ih, add_comm, add_shuffle3, add_assoc, add_comm n (n * p'), add_assoc]
 
 theorem left_distrib (n m p : Nat) :
     p * (n + m) = (p * n) + (p * m) := by
-  sorry
+  rw [mul_comm, mul_comm p, mul_comm p, right_distrib]
 
 theorem mul_assoc (n m p : Nat) :
     n * (m * p) = (n * m) * p := by
-  sorry
+  induction p with
+  | zero => 
+    rw [mul_zero, mul_zero, mul_zero]
+  | succ p' ih =>
+    rw [mul_succ, mul_succ, ←ih, left_distrib]
 
 --  ## A New Tactic Combinator: `<;>`
 
@@ -763,19 +832,25 @@ inductive Bin : Type where
 --  definitions of `incr` and `binToNat`, below, with your solution from
 --  Basics, so that this file can be graded on its own.
 
-def incr (m : Bin) : Bin
-  := sorry
+def incr (m : Bin) : Bin := 
+  match m with
+  | .z => .b1 .z
+  | .b0 n => .b1 n
+  | .b1 n => .b0 (incr n)
 
-theorem incr_z : incr .z = .b1 .z := sorry
-theorem incr_b0 m : incr (.b0 m) = .b1 m := sorry
-theorem incr_b1 m : incr (.b1 m) = .b0 (incr m) := sorry
+theorem incr_z : incr .z = .b1 .z := by rfl
+theorem incr_b0 m : incr (.b0 m) = .b1 m := by rfl
+theorem incr_b1 m : incr (.b1 m) = .b0 (incr m) := by rfl
 
-def binToNat (m : Bin) : Nat
-  := sorry
+def binToNat (m : Bin) : Nat := 
+  match m with
+  | .z => zero
+  | .b0 n => (binToNat n) * two
+  | .b1 n => (binToNat n) * two + one
 
-theorem binToNat_z : binToNat .z = zero := sorry
-theorem binToNat_b0 m : binToNat (.b0 m) = mul (binToNat m) two := sorry
-theorem binToNat_b1 m : binToNat (.b1 m) = add (mul (binToNat m) two) one := sorry
+theorem binToNat_z : binToNat .z = zero := by rfl
+theorem binToNat_b0 m : binToNat (.b0 m) = mul (binToNat m) two := by rfl
+theorem binToNat_b1 m : binToNat (.b1 m) = add (mul (binToNat m) two) one := by rfl
 
 --  THE FOLLOWING DETAILS CAN BE SKIPPED
 attribute [pp_nodot] Bin.b0 Bin.b1
@@ -805,16 +880,32 @@ attribute [pp_nodot] Bin.b0 Bin.b1
 
 theorem bin_to_nat_pres_incr (b : Bin) :
     binToNat (incr b) = (binToNat b) + one := by
-  sorry
+  rw [one, add_succ, add_zero]
+  induction b with
+  | z =>
+    rw [incr_z, binToNat_b1, binToNat_z, zero_mul, zero_add_one, one]
+  | b0 b' =>
+    rw [incr_b0, binToNat_b1, binToNat_b0, one, add_succ, add_zero]
+  | b1 b' ih =>
+    have h (n : Nat) : n + two = succ (succ n) := by
+      rw [two, one, add_succ, add_succ, add_zero]
+    rw [incr_b1, binToNat_b0, binToNat_b1, ih, one, add_one, add_zero, succ_mul, h]
 
 --  ### Exercise (3 stars): nat_bin_nat ⭐⭐⭐
 
 --  Write a function to convert natural numbers to binary numbers. Also
 --  write some simplification lemmas for it.
 
-def natToBin (n : Nat) : Bin := sorry
+def natToBin (n : Nat) : Bin :=
+  match n with
+  | .zero => .z
+  | .succ n => incr (natToBin n)
 
---  FILL IN HERE
+theorem natToBin_zero : natToBin zero = Bin.z := by
+  rfl
+
+theorem natToBin_succ : natToBin (succ n) = incr (natToBin  n) := by
+  rfl
 
 --  Prove that, if we start with any `Nat`, convert it to `Bin`, and
 --  convert it back, we get the `Nat` that we started with.
@@ -828,7 +919,10 @@ def natToBin (n : Nat) : Bin := sorry
 
 theorem nat_bin_nat (n : Nat) :
     binToNat (natToBin n) = n := by
-  sorry
+  induction n with
+  | zero => rfl
+  | succ n' ih => 
+    rw [natToBin_succ, bin_to_nat_pres_incr, one, add_succ, add_zero, ih]
 
 --  ## Bin to Nat and Back (Advanced)
 
@@ -850,25 +944,37 @@ sf_expect_failure_in
 
 theorem double_incr (n : Nat) :
     double (succ n) = (double n) + two := by
-  sorry
+  rw [two, one, add_succ, add_succ, add_zero, double]
 
 --  Now define a similar doubling function for `Bin`.
 
-def doubleBin (b : Bin) : Bin := sorry
+def doubleBin (b : Bin) : Bin := 
+  match b with
+  | .z => .z
+  | _ => .b0 b
 
 --  Fill in the characterizing lemmas for this definition below:
 
---  FILL IN HERE
+theorem doubleBin_z : doubleBin .z = .z := by rfl
+theorem doubleBin_b0 : doubleBin (.b0 n) = (.b0 (.b0 n)) := by rfl
+theorem doubleBin_b1 : doubleBin (.b1 n) = (.b0 (.b1 n)) := by rfl
 
 --  Check that your function correctly doubles zero.
 
-theorem double_bin_zero : doubleBin .z = .z := sorry
+theorem double_bin_zero : doubleBin .z = .z := by 
+  rw [doubleBin_z]
 
 --  Prove this lemma, which corresponds to `double_incr`.
 
 theorem double_incr_bin (b : Bin) :
     doubleBin (incr b) = incr (incr (doubleBin b)) := by
-  sorry
+  cases b with
+  | z =>
+    rw [incr_z, doubleBin_z, incr_z, doubleBin_b1, incr_b1, incr_z]
+  | b0 n =>
+    rw [doubleBin_b0, incr_b0, incr_b0, incr_b1, incr_b0, doubleBin_b1]
+  | b1 n =>
+    rw [incr_b1, doubleBin_b1, incr_b0, incr_b1, incr_b1, doubleBin_b0]
 
 --  (End of exercise)
 
@@ -903,17 +1009,39 @@ sf_expect_failure_in
 --  the `Bin` and *only* processes each bit once. Do not try to "look
 --  ahead" at future bits, as this will complicate the proof.
 
-def normalize (b : Bin) : Bin := sorry
+def normalize (b : Bin) : Bin :=
+  match b with
+  | .z => .z
+  | .b0 b' => doubleBin (normalize b')
+  | .b1 b' => .b1 (normalize b')
 
 --  Also specify the characterizing lemmas for this definition:
 
---  FILL IN HERE
+theorem normalize_z : normalize .z = .z := by rfl
+theorem normalize_b0 : normalize (.b0 b) = doubleBin (normalize b) := by rfl
+theorem normalize_b1 : normalize (.b1 b) = .b1 (normalize b) := by rfl
 
 --  Next, it would be a good idea to do some `example` proofs to check that
 --  your definition of `normalize` works the way you intend before you
 --  proceed. They won't be graded, but do fill in a few below.
 
---  FILL IN HERE
+example : normalize (.b0 (.b0 (.b0 .z))) = .z := by
+  rw [normalize_b0, normalize_b0, normalize_b0, normalize_z, doubleBin_z, doubleBin_z, doubleBin_z]
+
+example : normalize (.b1 (.b1 (.b0 .z))) = (.b1 (.b1 .z)) := by
+  rw [normalize_b1, normalize_b1, normalize_b0, normalize_z, doubleBin_z]
+
+example : normalize (.b0 (.b1 (.b1 .z))) = (.b0 (.b1 (.b1 .z))) := by
+  rw [normalize_b0, normalize_b1, normalize_b1, normalize_z, doubleBin_b1]
+
+example : normalize (.b0 (.b1 (.b0 .z))) = (.b0 (.b1 .z)) := by
+  rw [normalize_b0, normalize_b1, normalize_b0, normalize_z, doubleBin_b1, doubleBin_z]
+
+example : normalize (.b0 (.b0 (.b0 .z))) = .z := by
+  rw [normalize_b0, normalize_b0, normalize_b0, normalize_z, doubleBin_z, doubleBin_z, doubleBin_z]
+
+example : normalize (.b1 (.b0 (.b0 .z))) = .b1 .z := by
+  rw [normalize_b1, normalize_b0, normalize_b0, normalize_z, doubleBin_z, doubleBin_z]
 
 --  Now that we have defined all of our functions and their characterizing
 --  lemmas, we mark the definitions irreducible as usual. From here on,
@@ -930,11 +1058,29 @@ attribute [irreducible] normalize doubleBin natToBin incr binToNat
 --  have one lemma for the `b0` case (which also makes use of
 --  `double_incr_bin`) and another for the `b1` case.
 
---  FILL IN HERE
+theorem natToBin_even : natToBin (n + n) = doubleBin (natToBin n) := by
+  induction n with
+  | zero => 
+    rw [add_zero, natToBin_zero, doubleBin_z]
+  | succ n ih =>
+    rw [add_succ, succ_add, natToBin_succ, natToBin_succ, ih, ←double_incr_bin, natToBin_succ]
+
+theorem natToBin_odd : natToBin (n + n + one) = .b1 (natToBin n) := by
+  induction n with
+  | zero => 
+    rw [add_zero, zero_add, natToBin_zero, one, natToBin_succ, natToBin_zero, incr_z]
+  | succ n ih =>
+    rw [add_succ, succ_add, succ_add, natToBin_succ, natToBin_succ, succ_add, natToBin_succ, ih, incr_b1, incr_b0]
 
 theorem bin_nat_bin (b : Bin) :
     natToBin (binToNat b) = normalize b := by
-  sorry
+  induction b with
+  | z =>
+    rw [normalize_z, binToNat_z, natToBin_zero]
+  | b0 b' ih =>
+    rw [normalize_b0, binToNat_b0, mul_comm, mul_two, ←ih, natToBin_even]
+  | b1 b' ih =>
+    rw [binToNat_b1, mul_comm, mul_two, normalize_b1, ←ih, natToBin_odd]
 
 --  (End of exercise)
 
