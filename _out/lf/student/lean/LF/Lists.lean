@@ -129,13 +129,13 @@ theorem surjective_pairing_cases (p : NatProd) :
 
 theorem snd_fst_is_swap (p : NatProd) :
     (⟨p.snd, p.fst⟩ : NatProd) = p.swap := by
-  sorry
+  cases p; rfl
 
 --  ### Exercise (1 star): fst_swap_is_snd (Optional) ⭐
 
 theorem fst_swap_is_snd (p : NatProd) :
     p.swap.fst = p.snd := by
-  sorry
+  cases p; rfl;
 
 --  ### Structures
 
@@ -346,21 +346,25 @@ def foo (n : Nat) : NatList :=
 --  `countOddMembers` below. Have a look at the lemmas and examples to
 --  understand what these functions should do.
 
-def nonZeros (l : NatList) : NatList := sorry
+def nonZeros (l : NatList) : NatList := 
+  match l with
+  | [] => []
+  | 0 :: t => nonZeros t
+  | (h + 1):: t => (h + 1) :: nonZeros t
 
 --  The following lemmas should hold about your definition.
 
 theorem nonZeros_cons_zero (t : NatList) :
-    nonZeros (0 :: t) = nonZeros t := sorry
+    nonZeros (0 :: t) = nonZeros t := by rfl
 
 theorem nonZeros_nil :
-    nonZeros [] = [] := sorry
+    nonZeros [] = [] := by rfl
 
 theorem nonZeros_cons_nonZero (h : Nat) (t : NatList) :
-    nonZeros ((h + 1) :: t) = (h + 1) :: nonZeros t := sorry
+    nonZeros ((h + 1) :: t) = (h + 1) :: nonZeros t := by rfl
 
 theorem test_nonZeros : nonZeros [0, 1, 0] = [1] := by
-  sorry
+  rfl
 
 --  The next definition uses `bif`, Lean's conditional for boolean tests.
 --  The expression `bif b then x else y` evaluates to `x` when `b` is
@@ -375,25 +379,30 @@ sf_recall
   theorem Bool.cond_false {α} (x y : α) : (bif false then x else y) = y := by
     rfl
 
-def oddMembers (l : NatList) : NatList := sorry
+def oddMembers (l : NatList) : NatList :=
+  match l with
+  | [] => []
+  | h :: t => bif h.odd then h :: oddMembers t else oddMembers t
 
 theorem oddMembers_nil :
-    oddMembers [] = [] := sorry
+    oddMembers [] = [] := by rfl
 
 theorem oddMembers_cons (h : Nat) (t : NatList) :
     oddMembers (h :: t) =
-      bif h.odd then h :: oddMembers t else oddMembers t :=
-  sorry
+      bif h.odd then h :: oddMembers t else oddMembers t := by
+  rfl
 
 theorem oddMembers_cons_odd (n : Nat) (l : NatList)
     (h : n.odd = true) :
     oddMembers (n :: l) = n :: oddMembers l := by
-  sorry
+  rw [oddMembers, h]
+  rfl
 
 theorem oddMembers_cons_not_odd (n : Nat) (l : NatList)
     (h : n.odd = false) :
     oddMembers (n :: l) = oddMembers l := by
-  sorry
+  rw [oddMembers, h]
+  rfl
 
 --  Now, we can prove that `oddMembers [1, 2]` returns `[1]` using the
 --  lemmas:
@@ -422,20 +431,20 @@ example : oddMembers [1, 2] = [1] := by
 --  with a single `rfl`. This is possible because all of the elements and
 --  lists are concrete — there are no variables involved.
 
-example : oddMembers [1, 2] = [1] := sorry
+example : oddMembers [1, 2] = [1] := by rfl
 
-theorem test_oddMembers : oddMembers [0, 1, 2, 3, 0] = [1, 3] := sorry
+theorem test_oddMembers : oddMembers [0, 1, 2, 3, 0] = [1, 3] := by rfl
 
 --  For the next problem, `countOddMembers`, we encourage you to implement
 --  it using already-defined functions, rather than recursion.
 
-def countOddMembers (l : NatList) : Nat := sorry
+def countOddMembers (l : NatList) : Nat := (oddMembers l).length
 
-example : countOddMembers [0, 1, 2, 3, 0] = 2 := sorry
+example : countOddMembers [0, 1, 2, 3, 0] = 2 := by rfl
 
-theorem test_countOddMembers1 : countOddMembers [0, 2, 4] = 0 := sorry
+theorem test_countOddMembers1 : countOddMembers [0, 2, 4] = 0 := by rfl
 
-theorem test_countOddMembers2 : countOddMembers [] = 0 := sorry
+theorem test_countOddMembers2 : countOddMembers [] = 0 := by rfl
 
 --  ### Exercise (3 stars): alternate (Advanced) ⭐⭐⭐
 
@@ -449,19 +458,23 @@ theorem test_countOddMembers2 : countOddMembers [] = 0 := sorry
 --  difficulty, consider pattern matching against both lists at the same
 --  time.
 
-def alternate (l₁ l₂ : NatList) : NatList := sorry
+def alternate (l₁ l₂ : NatList) : NatList := 
+  match l₁, l₂ with
+  | [], l => l
+  | l, [] => l
+  | h₁ :: t₁, h₂ :: t₂ => h₁ :: h₂ :: alternate t₁ t₂
 
 theorem test_alternate1 :
-    alternate [1, 2, 3] [4, 5, 6] = [1, 4, 2, 5, 3, 6] := sorry
+    alternate [1, 2, 3] [4, 5, 6] = [1, 4, 2, 5, 3, 6] := by rfl
 
 theorem test_alternate2 :
-    alternate [1] [4, 5, 6] = [1, 4, 5, 6] := sorry
+    alternate [1] [4, 5, 6] = [1, 4, 5, 6] := by rfl
 
 theorem test_alternate3 :
-    alternate [1, 2, 3] [4] = [1, 4, 2, 3] := sorry
+    alternate [1, 2, 3] [4] = [1, 4, 2, 3] := by rfl
 
 theorem test_alternate4 :
-    alternate [] [20, 30] = [20, 30] := sorry
+    alternate [] [20, 30] = [20, 30] := by rfl
 
 --  ### Counting
 
@@ -470,35 +483,40 @@ theorem test_alternate4 :
 --  Define a `count` function for `NatList`s that counts the number of
 --  times an element `n` appears in the list.
 
-def count (n : Nat) (l : NatList) : Nat := sorry
+def count (n : Nat) (l : NatList) : Nat := 
+  match l with
+  | [] => 0
+  | h :: t => bif n == h then count n t + 1 else count n t
 
 --  Now prove these lemmas, which should hold about your definition.
 
-theorem count_nil (n : Nat) : count n [] = 0 := sorry
+theorem count_nil (n : Nat) : count n [] = 0 := by rfl
 
 theorem count_cons_def (n h : Nat) (t : NatList) :
     count n (h :: t) =
-      bif n == h then count n t + 1 else count n t := sorry
+      bif n == h then count n t + 1 else count n t := by rfl
 
 theorem count_cons_same (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = true) :
     count n₁ (n₂ :: t) = count n₁ t + 1 := by
-  sorry
+  rw [count, h]
+  rfl
 
 theorem count_cons_diff (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = false) :
     count n₁ (n₂ :: t) = count n₁ t := by
-  sorry
+  rw [count, h]
+  rfl
 
 example : count 1 [1] = 1 := by
   rw [count_cons_same _ _ _ rfl]
   rw [count_nil]
 
-example : count 2 [2, 2] = 2 := sorry
+example : count 2 [2, 2] = 2 := by rfl
 
-theorem test_count1 : count 1 [1, 1, 4] = 2 := sorry
+theorem test_count1 : count 1 [1, 1, 4] = 2 := by rfl
 
-theorem test_count2 : count 5 [1, 1, 4] = 0 := sorry
+theorem test_count2 : count 5 [1, 1, 4] = 0 := by rfl
 
 --  (End of exercise)
 
@@ -506,35 +524,40 @@ theorem test_count2 : count 5 [1, 1, 4] = 0 := sorry
 --  proof is computationally straightforward — compute both sides of the
 --  equality and check whether they are the same.
 
-example : count 1 [1, 2, 3, 1, 4, 1] = 3 := sorry
-example : count 6 [1, 2, 3, 1, 4, 1] = 0 := sorry
+example : count 1 [1, 2, 3, 1, 4, 1] = 3 := by rfl
+example : count 6 [1, 2, 3, 1, 4, 1] = 0 := by rfl
 
 --  ### Membership
 
 --  ### Exercise (1 star): membership ⭐
 
-def member (n : Nat) (l : NatList) : Bool := sorry
+def member (n : Nat) (l : NatList) : Bool := 
+  match l with
+  | [] => false
+  | h :: t => n == h || member n t
 
-theorem member_nil (n : Nat) : member n [] = false := sorry
+theorem member_nil (n : Nat) : member n [] = false := by rfl
 
 theorem member_cons_same (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = true) :
     member n₁ (n₂ :: t) = true := by
-  sorry
+  rw [member, h]
+  rfl
 
 theorem member_cons_diff (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = false) :
     member n₁ (n₂ :: t) = member n₁ t := by
-  sorry
+  rw [member, h]
+  rfl
 
 example : member 1 [1] = true := by
   rw [member_cons_same _ _ _ rfl]
 
-example : member 2 [1] = false := sorry
+example : member 2 [1] = false := by rfl
 
-theorem test_member1 : member 1 [1, 4, 1] = true := sorry
+theorem test_member1 : member 1 [1, 4, 1] = true := by rfl
 
-theorem test_member2 : member 2 [1, 4, 1] = false := sorry
+theorem test_member2 : member 2 [1, 4, 1] = false := by rfl
 
 --  ### Removal
 
@@ -545,45 +568,55 @@ theorem test_member2 : member 2 [1, 4, 1] = false := sorry
 --  When `removeOne` is applied to a list without the number to remove, it
 --  should return the same list unchanged.
 
-def removeOne (n : Nat) (l : NatList) : NatList := sorry
+def removeOne (n : Nat) (l : NatList) : NatList :=
+  match l with
+  | [] => []
+  | h :: t => bif n == h then t else h :: removeOne n t
 
-theorem removeOne_nil (n : Nat) : removeOne n nil = nil := sorry
+theorem removeOne_nil (n : Nat) : removeOne n nil = nil := by rfl
 
 theorem removeOne_cons_same (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = true) :
     removeOne n₁ (n₂ :: t) = t := by
-  sorry
+  rw [removeOne, h]
+  rfl
 
 theorem removeOne_cons_diff (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = false) :
     removeOne n₁ (n₂ :: t) = n₂ :: removeOne n₁ t := by
-  sorry
+  rw [removeOne, h]
+  rfl
 
 example : removeOne 5 [1, 5, 4] = [1, 4] := by
   rw [removeOne_cons_diff _ _ _ rfl]
   rw [removeOne_cons_same _ _ _ rfl]
 
-example : count 5 (removeOne 5 [1, 5, 4]) = 0 := sorry
+example : count 5 (removeOne 5 [1, 5, 4]) = 0 := by rfl
 
-theorem test_removeOne1 : count 4 (removeOne 5 [4, 5, 1, 4]) = 2 := sorry
+theorem test_removeOne1 : count 4 (removeOne 5 [4, 5, 1, 4]) = 2 := by rfl
 
-theorem test_removeOne2 : count 5 (removeOne 5 [1, 5, 5, 4]) = 1 := sorry
+theorem test_removeOne2 : count 5 (removeOne 5 [1, 5, 5, 4]) = 1 := by rfl
 
 --  ### Exercise (3 stars): removeAll (Optional) ⭐⭐⭐
 
-def removeAll (n : Nat) (l : NatList) : NatList := sorry
+def removeAll (n : Nat) (l : NatList) : NatList := 
+  match l with
+  | [] => []
+  | h :: t => bif n == h then removeAll n t else h :: removeAll n t
 
-theorem removeAll_nil (n : Nat) : removeAll n [] = [] := sorry
+theorem removeAll_nil (n : Nat) : removeAll n [] = [] := by rfl
 
 theorem removeAll_cons_same (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = true) :
     removeAll n₁ (n₂ :: t) = removeAll n₁ t := by
-  sorry
+  rw [removeAll, h]
+  rfl
 
 theorem removeAll_cons_diff (n₁ n₂ : Nat) (t : NatList)
   (h : (n₁ == n₂) = false) :
     removeAll n₁ (n₂ :: t) = n₂ :: removeAll n₁ t := by
-  sorry
+  rw [removeAll, h]
+  rfl
 
 example : count 5 (removeAll 5 [5, 1]) = 0 := by
   rw [removeAll_cons_same _ _ _ rfl]
@@ -592,29 +625,34 @@ example : count 5 (removeAll 5 [5, 1]) = 0 := by
   rw [count_cons_diff _ _ _ rfl]
   rw [count_nil]
 
-example : count 5 (removeAll 5 [5, 5]) = 0 := sorry
+example : count 5 (removeAll 5 [5, 5]) = 0 := by rfl
 
-theorem test_removeAll1 : count 4 (removeAll 5 [4, 5, 4]) = 2 := sorry
+theorem test_removeAll1 : count 4 (removeAll 5 [4, 5, 4]) = 2 := by rfl
 
-theorem test_removeAll2 : count 5 (removeAll 5 [2, 5, 5, 5, 1]) = 0 := sorry
+theorem test_removeAll2 : count 5 (removeAll 5 [2, 5, 5, 5, 1]) = 0 := by rfl
 
 --  ### Included
 
 --  ### Exercise (3 stars): included (Optional) ⭐⭐⭐
 
-def included (l₁ l₂ : NatList) : Bool := sorry
+def included (l₁ l₂ : NatList) : Bool :=
+  match l₁ with
+  | [] => true
+  | h₁ :: t₁ => if member h₁ l₂ then included t₁ (removeOne h₁ l₂) else false
 
-theorem included_nil (l₂ : NatList) : included nil l₂ = true := sorry
+theorem included_nil (l₂ : NatList) : included nil l₂ = true := by rfl
 
 theorem included_cons_member (n : Nat) (l₁ l₂ : NatList)
   (h : member n l₂ = true) :
     included (cons n l₁) l₂ = included l₁ (removeOne n l₂) := by
-  sorry
+  rw [included, h]
+  rfl
 
 theorem included_cons_nonmember (n : Nat) (l₁ l₂ : NatList)
   (h : member n l₂ = false) :
     included (cons n l₁) l₂ = false := by
-  sorry
+  rw [included, h]
+  rfl
 
 example : included [1] [2, 1] = true := by
   rw [included_cons_member]
@@ -622,11 +660,11 @@ example : included [1] [2, 1] = true := by
   · rw [member_cons_diff _ _ _ rfl]
     rw [member_cons_same _ _ _ rfl]
 
-example : included [1, 1] [2, 1, 4, 1] = true := sorry
+example : included [1, 1] [2, 1, 4, 1] = true := by rfl
 
-theorem test_included1 : included [1, 2] [2, 1, 4, 1] = true := sorry
+theorem test_included1 : included [1, 2] [2, 1, 4, 1] = true := by rfl
 
-theorem test_included2 : included [1, 2, 2] [2, 1, 4, 1] = false := sorry
+theorem test_included2 : included [1, 2, 2] [2, 1, 4, 1] = false := by rfl
 
 --  ## Reasoning About Lists
 
@@ -934,59 +972,87 @@ theorem length_append (l₁ l₂ : NatList) :
 
 theorem append_nil (l : NatList) :
     l ++ [] = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [cons_append, ih]
 
 theorem reverse_append (l₁ l₂ : NatList) :
    (l₁ ++ l₂).reverse = l₂.reverse ++ l₁.reverse := by
-  sorry
+  induction l₁ with
+  | nil => rw [nil_append, reverse_nil, append_nil]
+  | cons h₁ t₁ ih =>
+    rw [cons_append, reverse_cons, ih, reverse_cons, append_assoc]
 
 --  An *involution* is a function that is its own inverse. That is,
 --  applying the function twice yields the original input.
 
 theorem reverse_involutive (l : NatList) :
     l.reverse.reverse = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih => 
+    rw [reverse_cons, reverse_append, ih]
+    rfl
 
 --  There is a short solution to the next one. If you find yourself getting
 --  tangled up, step back and try to look for a simpler way.
 
 theorem append_assoc4 (l₁ l₂ l₃ l4 : NatList) :
     l₁ ++ (l₂ ++ (l₃ ++ l4)) = ((l₁ ++ l₂) ++ l₃) ++ l4 := by
-  sorry
+  rw [append_assoc, append_assoc]
 
 --  An exercise about your implementation of `nonZeros`:
 
 theorem nonZeros_append (l₁ l₂ : NatList) :
     nonZeros (l₁ ++ l₂) = (nonZeros l₁) ++ (nonZeros l₂) := by
-  sorry
+  induction l₁ with
+  | nil => rw [nil_append, nonZeros_nil, nil_append]
+  | cons h₁ t₁ ih =>
+    cases h₁
+    case cons.zero => 
+      rw [cons_append, nonZeros_cons_zero, nonZeros_cons_zero, ih]
+    case cons.succ =>
+      rw [cons_append, nonZeros_cons_nonZero, nonZeros_cons_nonZero, ih, cons_append]
 
 --  ### Exercise (2 stars): beq ⭐⭐
 
 --  Fill in the definition of `beq`, which compares lists of numbers for
 --  equality. Prove that `beq l l` yields `true` for every list `l`.
 
-def beq (l₁ l₂ : NatList) : Bool := sorry
+def beq (l₁ l₂ : NatList) : Bool := 
+  match l₁, l₂ with
+  | [], [] => true
+  | _, [] => false
+  | [], _ => false
+  | h₁ :: t₁, h₂ :: t₂ => bif h₁ == h₂ then beq t₁ t₂ else false
 
-theorem beq_nil : beq [] [] = true := sorry
+theorem beq_nil : beq [] [] = true := by rfl
 
 theorem beq_cons_same (h₁ h₂ : Nat) (t₁ t₂ : NatList)
   (h : (h₁ == h₂) = true) :
     beq (h₁ :: t₁) (h₂ :: t₂) = beq t₁ t₂ := by
-  sorry
+  rw [beq, h]
+  rfl
 
 theorem beq_cons_diff (h₁ h₂ : Nat) (t₁ t₂ : NatList)
   (h : (h₁ == h₂) = false) :
     beq (h₁ :: t₁) (h₂ :: t₂) = false := by
-  sorry
+  rw [beq, h]
+  rfl
 
-example : beq [] [] = true := sorry
-example : beq [1, 2, 3] [1, 2, 3] = true := sorry
+example : beq [] [] = true := by rfl
+example : beq [1, 2, 3] [1, 2, 3] = true := by rfl
 example : beq [1, 2, 3] [1, 2, 4] = false := by
-  sorry
+  rfl
 
 theorem beq_refl (l : NatList) :
     beq l l = true := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih => 
+    rw [beq_cons_same, ih]
+    rw [Nat.beq_eq_true_eq]
 
 --  ### List Exercises, Part 2
 
@@ -999,7 +1065,8 @@ open NatList
 
 theorem count_member_nonZero (l : NatList) :
     Nat.ble 1 (count 1 (1 :: l)) = true := by
-  sorry
+  rw [count_cons_same (h := BEq.refl _), Nat.add_one]
+  rfl
 
 --  (End of exercise)
 
@@ -1016,13 +1083,39 @@ theorem ble_self_succ (n : Nat) :
 
 theorem remove_does_not_increase_count (l : NatList) :
     Nat.ble (count 0 (removeOne 0 l)) (count 0 l) = true := by
-  sorry
+  induction l with
+  | nil => 
+    rw [removeOne_nil, count_nil]
+    rfl
+  | cons h t ih => 
+    cases h with
+    | zero => 
+      rw [removeOne_cons_same, count_cons_same, ble_self_succ] 
+      repeat rfl
+    | succ n => 
+      rw [removeOne_cons_diff, count_cons_diff, count_cons_diff, ih] 
+      repeat rfl
+  
 
 --  ### Exercise (3 stars): count_append (Optional, Manually graded) ⭐⭐⭐
 
 --  Write down an interesting theorem `count_append` about lists involving
 --  the functions `count` and `append`, and prove it. (You may find that
 --  the difficulty of the proof depends on how you defined `count`!)
+
+theorem count_append (n : Nat) (l₁ l₂ : NatList) : 
+    count n (l₁ ++ l₂) = count n l₁ + count n l₂ := by
+  induction l₁ with
+  | nil => 
+    rw [nil_append, count_nil, Nat.zero_add]
+  | cons h t ih =>
+    cases heq : n == h with
+    | true => 
+      rw [cons_append, count_cons_same, count_cons_same, ih, Nat.add_right_comm]
+      repeat exact heq
+    | false => 
+      rw [cons_append, count_cons_diff, count_cons_diff, ih]
+      repeat exact heq
 
 --  ### Exercise (3 stars): involutive_injective (Advanced) ⭐⭐⭐
 
@@ -1035,7 +1128,12 @@ theorem remove_does_not_increase_count (l : NatList) :
 theorem involutive_injective (f : Nat → Nat)
   (hInv : ∀ n : Nat, n = f (f n)) :
     (∀ n₁ n₂ : Nat, f n₁ = f n₂ → n₁ = n₂) := by
-  sorry
+  intro n₁ n₂ heq
+  have hn₁ : n₁ = f (f n₁) := hInv n₁
+  have hn₂ : n₂ = f (f n₂) := hInv n₂
+  rw [heq] at hn₁
+  rw [hn₁]
+  rw [←hn₂]
 
 --  ### Exercise (2 stars): reverse_injective (Advanced) ⭐⭐
 
@@ -1046,7 +1144,11 @@ theorem involutive_injective (f : Nat → Nat)
 
 theorem reverse_injective (l₁ l₂ : NatList)
     (h : l₁.reverse = l₂.reverse) : l₁ = l₂ := by
-  sorry
+  have hl₁ : l₁.reverse.reverse = l₁ := reverse_involutive l₁
+  have hl₂ : l₂.reverse.reverse = l₂ := reverse_involutive l₂
+  rw [h] at hl₁
+  rw [hl₁] at hl₂
+  rw [hl₂]
 
 --  ## Options
 
@@ -1108,11 +1210,14 @@ theorem NatOption.elim_some (d₁ d₂ : Nat) : elim d₁ (.some d₂) = d₂ :=
 --  Using the same idea, fix the `head` function from earlier so we don't
 --  have to pass a default element for the `nil` case.
 
-def head? (l : NatList) : NatOption := sorry
+def head? (l : NatList) : NatOption := 
+  match l with
+  | [] => .none
+  | h :: _ => .some h
 
-example : head? [] = .none := sorry
-theorem test_head?1 : head? [1] = .some 1 := sorry
-theorem test_head?2 : head? [5, 6] = .some 5 := sorry
+example : head? [] = .none := by rfl
+theorem test_head?1 : head? [1] = .some 1 := by rfl
+theorem test_head?2 : head? [5, 6] = .some 5 := by rfl
 
 --  ### Exercise (1 star): option_elim_head? (Optional) ⭐
 
@@ -1120,7 +1225,11 @@ theorem test_head?2 : head? [5, 6] = .some 5 := sorry
 
 theorem option_elim_head? (l : NatList) (default : Nat) :
     head default l = NatOption.elim default (head? l) := by
-  sorry
+  cases l with
+  | nil => 
+    rw [head, head?, NatOption.elim_none]
+  | cons h t => 
+    rw [head, head?, NatOption.elim_some]
 
 --  (End of exercise)
 
@@ -1150,7 +1259,7 @@ def MyId.beq (x₁ x₂ : MyId) : Bool :=
 --  ### Exercise (1 star): MyId.beq_refl ⭐
 
 theorem MyId.beq_refl (x : MyId) : MyId.beq x x = true := by
-  sorry
+  rw [MyId.beq, BEq.refl]
 
 --  (End of exercise)
 
@@ -1200,6 +1309,10 @@ def find (x : MyId) (d : PartialMap) : NatOption :=
 --  (A) True (B) False (C) Not sure
 
 --   ----------------------------------------
+example (d : PartialMap) (x : MyId) (n : Nat) : 
+    find x (update d x n) = .some n := by
+  rw [update, find, MyId.beq, beq_self_eq_true]
+  rfl
 
 --  _Quiz:_
 
@@ -1213,18 +1326,26 @@ def find (x : MyId) (d : PartialMap) : NatOption :=
 --  (A) True (B) False (C) Not sure
 
 --   ----------------------------------------
+example (d : PartialMap) (x y : MyId) (o : Nat)
+    (h : MyId.beq x y = false) : 
+    find x (update d y o) = find x d := by
+  rw [update, find, h]
+  rfl
 
 --  ### Exercise (1 star): update_eq ⭐
 
 theorem update_eq (d : PartialMap) (x : MyId) (n : Nat) :
     find x (update d x n) = .some n := by
-  sorry
+  rw [update, find, MyId.beq, BEq.refl]
+  rfl
 
 --  ### Exercise (1 star): update_neq ⭐
 
 theorem update_neq (d : PartialMap) (x y : MyId) (o : Nat) :
     MyId.beq x y = false → find x (update d y o) = find x d := by
-  sorry
+  intro h
+  rw [update, find, h]
+  rfl
 
 --  (End of exercise)
 
