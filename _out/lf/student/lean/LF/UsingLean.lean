@@ -145,11 +145,11 @@ sf_expect_failure_in
 
 theorem mul_three (n : Nat) :
     3 * n = n + n + n := by
-  sorry
+  rw [Nat.add_one_mul, Nat.two_mul]
 
 theorem mul_three_beq (n : Nat) :
     (3 * n == n + n + n) = true := by
-  sorry
+  rw [mul_three, Nat.beq_eq_true_eq]
 
 --  ## Structuring Proofs with `calc`
 
@@ -216,7 +216,17 @@ theorem succ_mul_succ (n m : Nat) :
 
 theorem succ_mul_succ' (n m : Nat) :
     (n + 1) * (m + 1) = n * m + n + m + 1 := by
-  sorry
+  calc (n + 1) * (m + 1)
+    _ = (n + 1) * m + (n + 1) * 1 := by rw [Nat.mul_add]
+    _ = (n + 1) * m + (n + 1) := by rw [Nat.mul_one]
+    _ = m * (n + 1) + (n + 1) := by rw [Nat.mul_comm]
+    _ = (m * n) + (m * 1) + (n + 1) := by rw [Nat.left_distrib]
+    _ = (m * n) + m + (n + 1) := by rw [Nat.mul_one]
+    _ = m * n + m + n + 1 := by rw [Nat.add_succ]
+    _ = n * m + m + n + 1 := by rw [Nat.mul_comm]
+    _ = n * m + (m + n) + 1 := by rw [← Nat.add_assoc]
+    _ = n * m + (n + m) + 1 := by rw [Nat.add_comm n m]
+    _ = n * m + n + m + 1 := by rw [← Nat.add_assoc]
 
 --  (End of exercise)
 
@@ -300,7 +310,7 @@ example (n : Nat) : addThrice n = n + addTwice n := by
 --  as appropriate.
 
 theorem rwUnfold (n m : Nat) (h : m = n) : addThrice m = n + (n + n) := by
-  sorry
+  rw [addThrice, h, Nat.add_assoc]
 
 --  (End of exercise)
 
@@ -478,7 +488,12 @@ example (n : Nat) : Nat.double (n + 0) = Nat.double n := by
 
 theorem Nat.even_succ (n : Nat) :
     (n + 1).even = !(n.even) := by
-  sorry
+  induction n with
+  | zero => 
+    rw [Nat.zero_add, even, even, Bool.not_true]
+  | succ n' ih =>
+    repeat rw [Nat.add_one]
+    rw [even, ih, Bool.not_not]
 
 --  (End of exercise)
 
@@ -493,12 +508,18 @@ theorem Nat.double_succ (n : Nat) : (n + 1).double = n.double + 2 := by rfl
 --  ### Exercise (2 stars): double_add ⭐⭐
 
 theorem Nat.double_add (n : Nat) : n.double = n + n := by
-  sorry
+  induction n with
+  | zero => rfl
+  | succ n' ih => 
+    rw [Nat.double_succ, ih, Nat.add_add_add_comm]
 
 --  ### Exercise (2 stars): double_mul ⭐⭐
 
 theorem Nat.double_mul (n : Nat) : n.double = 2 * n := by
-  sorry
+  induction n with
+  | zero => rfl
+  | succ n' ih =>
+    rw [Nat.double_succ, ih, Nat.left_distrib]
 
 --  (End of exercise)
 
