@@ -117,7 +117,9 @@ theorem injection_ex3 {α : Type} (x y z : α) (l j : List α)
     (h₁ : x :: y :: l = z :: j)
     (h₂ : j = z :: l) :
     x = y := by
-  sorry
+  rw [h₂] at h₁
+  injections h₃ h₄ h₅
+  rw [h₃, h₅]
 
 --  ### Disjointness
 
@@ -187,7 +189,7 @@ example (n : Nat)
 theorem disjoint_ex3 {α : Type} (x y z : α) (l : List α)
     (h : x :: y :: l = []) :
     x = z := by
-  sorry
+  contradiction
 
 --  ### Quizzes
 
@@ -411,7 +413,19 @@ theorem chooseIf_self {α : Type} (test : α → Bool) (x : α) :
 --  Recall the `unzip` function from chapter Poly; copy your implementation
 --  from that chapter and paste it below:
 
-def unzip' {α β : Type} (l : List (α × β)) : List α × List β := sorry
+def unzip' {α β : Type} (l : List (α × β)) : List α × List β :=
+  match l with
+  | [] => ([], [])
+  | h :: t => 
+    let res := unzip' t
+    (h.fst :: res.fst, h.snd :: res.snd)
+
+theorem unzip'_nil {α β : Type} : unzip' ([] : List (α × β)) = ([], []) := by
+  rfl
+
+theorem unzip'_cons {α β : Type} {h : α × β} {t : List (α × β)} : 
+    unzip' (h :: t) = (h.fst :: (unzip' t).fst, h.snd :: (unzip' t).snd) := by
+  rfl
 
 --  Prove that `unzip'` and `zip` are inverses in the following sense.
 --  Remember that you can use `dsimp only` to simplify expressions
@@ -421,8 +435,17 @@ theorem zip_unzip' {α β : Type} (l : List (α × β))
     (l₁ : List α) (l₂ : List β)
     (h : unzip' l = (l₁, l₂)) :
     zip l₁ l₂ = l := by
-  sorry
-
+  induction l generalizing l₁ l₂ with
+  | nil => 
+    rw [unzip'] at h
+    injection h with hl₁ hl₂
+    rw [←hl₁, ←hl₂, zip]
+  | cons head tail ih => 
+    rw [unzip'] at h
+    injection h with hl₁ hl₂
+    rw [←hl₁, ←hl₂, zip, ih]
+    dsimp only
+    
 --  ### Splitting with Equations
 
 --  When using `cases`, we can specify to Lean that it should remember an
@@ -489,7 +512,18 @@ theorem keepIf_some {α : Type} (test : α → Bool) (x y : α)
 
 theorem bool_fn_iterate_three_eq_one (f : Bool → Bool) (b : Bool) :
     f (f (f b)) = f b := by
-  sorry
+  cases hb : b with
+  | false =>
+    cases hf : f false with
+    | false => 
+      repeat rw [hf]
+    | true =>
+      cases _ : f true <;> assumption
+  | true =>
+    cases ht : f true with
+    | false => 
+      cases _ : f false <;> assumption
+    | true => repeat rw [ht]
 
 --  ## The `apply` Tactic
 
@@ -545,7 +579,9 @@ theorem apply_exercise (m : Nat)
     (h₂ : ∀ (n : Nat), n.even = false → n.odd = true)
     (hEven : m.even = true) :
     (m + 1).odd = true := by
-  sorry
+  apply h₂
+  apply h₁
+  apply hEven
 
 --  (End of exercise)
 
@@ -570,7 +606,9 @@ example (n m : Nat) (h : n = 0 → n = m) (hn : n = 0) : m = n := by
 
 theorem rev_exercise1 {α : Type} (l l' : List α) (h : l = l'.rev) :
     l' = l.rev := by
-  sorry
+  rw [h]
+  symm
+  apply reverse_reverse
 
 --  ### Exercise (1 star): apply_rewrite (Optional, Manually graded) ⭐
 
@@ -724,7 +762,7 @@ theorem trans_eq_exercise (n m o p : Nat)
     (h₁ : m = o.minusTwo)
     (h₂ : (n + p) = m) :
     (n + p) = o.minusTwo := by
-  sorry
+  exact trans_eq _ _ _ h₂ h₁
 
 --  ### Forward Reasoning with `apply`
 
@@ -823,7 +861,12 @@ example (m : Nat) (h : ∀ n, m * n = 0) : m = 0 := by
 
 theorem nth?_always_none {l : List α} (h : ∀ i, nth? l i = none) :
     l = [] := by
-  sorry
+  cases l with
+  | nil => rfl
+  | cons head tail =>
+    specialize h 0
+    rw [nth?_cons_zero] at h
+    contradiction
 
 --  (End of exercise)
 
@@ -1041,7 +1084,24 @@ theorem double_injective (n m : Nat) (h : n.double = m.double) : n = m := by
 theorem add_self_injective (n m : Nat)
     (h : n + n = m + m) :
     n = m := by
-  sorry
+  induction n generalizing m with
+  | zero =>
+    cases m with
+    | zero => rfl
+    | succ m' => 
+      rw [Nat.add_zero] at h
+      contradiction
+  | succ n ih =>
+    cases m with
+    | zero => 
+      rw [Nat.zero_add] at h
+      contradiction
+    | succ m' =>
+      congr
+      apply ih
+      rw [Nat.add_right_comm, Nat.add_right_comm m'] at h
+      injections
+
 
 --  ### Exercise (2 stars): add_self_injective_informal (Manually graded) ⭐⭐
 
@@ -1157,7 +1217,17 @@ example (n m p q : Nat)
 theorem nth?_after_last {α : Type}
     {n : Nat} {l : List α} (h : l.length = n) :
     nth? l n = none := by
-  sorry
+  induction l generalizing n with
+  | nil => rfl
+  | cons head tail ih =>
+    cases n with
+    | zero => contradiction
+    | succ n' => 
+      rw [List.length_cons] at h
+      injection h with h
+      rw [nth?_cons_succ]
+      apply ih
+      exact h
 
 --  ### Exercise (3 stars): length_append_cons (Optional) ⭐⭐⭐
 
@@ -1166,7 +1236,16 @@ theorem nth?_after_last {α : Type}
 theorem length_append_cons {α : Type} {l₁ l₂ : List α} {x : α} {n : Nat}
     (h : (l₁ ++ (x :: l₂)).length = n) :
     ((l₁ ++ l₂).length) + 1 = n := by
-  sorry
+  induction l₁ generalizing n with
+  | nil =>
+    rw [List.nil_append, List.length_cons] at h
+    rw [List.nil_append]
+    exact h
+  | cons head tail ih =>
+    rw [List.cons_append, List.length_cons] at * 
+    rw [←h]
+    congr
+    apply ih rfl
 
 --  ### Exercise (3 stars): length_append_self (Optional) ⭐⭐⭐
 
@@ -1176,7 +1255,14 @@ theorem length_append_cons {α : Type} {l₁ l₂ : List α} {x : α} {n : Nat}
 theorem length_append_self {α : Type} {n : Nat} {l : List α}
     (h : l.length = n) :
     (l ++ l).length = n + n := by
-  sorry
+  induction l generalizing n with
+  | nil =>
+    cases n with
+    | zero => rfl
+    | succ n => contradiction
+  | cons head tail ih =>
+    rw [List.length_cons] at h
+    rw [List.cons_append, List.length_cons, ←length_append_cons rfl, ih rfl, ←h, Nat.add_add_add_comm]
 
 --  ### Exercise (3 stars): list_ext ⭐⭐⭐
 
@@ -1184,7 +1270,28 @@ theorem length_append_self {α : Type} {n : Nat} {l : List α}
 --  should be useful.
 
 theorem list_ext {l₁ l₂ : List α} (h : ∀ n, nth? l₁ n = nth? l₂ n) : l₁ = l₂ := by
-  sorry
+  induction l₁ generalizing l₂ with
+  | nil =>
+    cases l₂ with
+    | nil => rfl
+    | cons head tail => 
+      specialize h 0
+      rw [nth?_nil] at h
+      contradiction
+  | cons h₁ t₁ ih =>
+    cases l₂ with
+    | nil =>
+      specialize h 0
+      rw [nth?_nil] at h
+      contradiction
+    | cons h₂ t₂ =>
+      have h' : some h₁ = some h₂ := h 0
+      injections h'
+      rw [ih (l₂ := t₂), h']
+      intro n
+      specialize h (n + 1)
+      rw [nth?_cons_succ, nth?_cons_succ] at h
+      assumption
 
 --  ### Exercise (3 stars): diagonal_induction (Optional) ⭐⭐⭐
 
@@ -1196,14 +1303,34 @@ theorem diagonal_induction (p : Nat → Nat → Prop)
     (hzs : ∀ n, p 0 n → p 0 (n + 1))
     (hss : ∀ m n, p m n → p (m + 1) (n + 1)) :
     ∀ m n, p m n := by
-  sorry
+  intro m n
+  induction m generalizing n with
+  | zero => 
+    induction n with
+    | zero => assumption
+    | succ n' ih =>
+      apply hzs
+      exact ih
+  | succ m' ih =>
+    cases n with
+    | zero => 
+      apply hsz
+      apply ih
+    | succ n' =>
+      apply hss
+      apply ih
 
 --  ### Exercise (2 stars): append_left_cancel ⭐⭐
 
 theorem append_left_cancel {α : Type} (l₁ l₂ l₃ : List α)
     (h : l₁ ++ l₂ = l₁ ++ l₃) :
     l₂ = l₃ := by
-  sorry
+  induction l₁ with
+  | nil => assumption
+  | cons head tail ih =>
+    injection h with _ ht
+    apply ih
+    assumption
 
 --  ### Exercise (3 stars): map_injective_of_injective ⭐⭐⭐
 
@@ -1223,8 +1350,21 @@ theorem map_injective_of_injective {α β : Type}
     (l₁ l₂ : List α)
     (h : map f l₁ = map f l₂) :
     l₁ = l₂ := by
-  sorry
-
+  induction l₁ generalizing l₂ with
+  | nil =>
+    cases l₂ with
+    | nil => rfl
+    | cons _ _ => contradiction
+  | cons h₁ t₁ ih =>
+    cases l₂ with
+    | nil => contradiction
+    | cons h₂ t₂ =>
+      rw [map_cons, map_cons] at h
+      injection h with hh ht
+      replace hh := hf h₁ h₂ hh
+      replace ht := ih t₂ ht
+      rw [hh, ht]
+      
 --  ### Exercise (3 stars): unzip'_zip (Advanced, Manually graded) ⭐⭐⭐
 
 --  We proved in `zip_unzip'` that `zip`ping the result of `unzip'`
@@ -1240,7 +1380,23 @@ theorem map_injective_of_injective {α β : Type}
 --  will need to account for the behavior of `zip` in its base cases, which
 --  possibly drop some list elements.
 
---  FILL IN HERE
+theorem unzip'_zip {α β : Type}
+    {l₁ : List α} {l₂ : List β}
+    (h : l₁.length = l₂.length) :
+    unzip' (zip l₁ l₂) = (l₁, l₂) := by
+  induction l₁ generalizing l₂ with
+  | nil => 
+    cases l₂ with
+    | nil => rfl
+    | cons head tail => contradiction
+  | cons h₁ t₁ ih =>
+    cases l₂ with
+    | nil => contradiction
+    | cons h₂ t₂ =>
+      rw [List.length_cons, List.length_cons] at h
+      injection h with h
+      rw [zip_cons_cons, unzip'_cons, ih h]
+
 
 --  ### Exercise (3 stars): test_pos_of_filter_cons (Advanced) ⭐⭐⭐
 
@@ -1248,8 +1404,20 @@ theorem test_pos_of_filter_cons {α : Type}
     (test : α → Bool) (x : α) (l l' : List α)
     (h : filter test l = x :: l') :
     test x = true := by
-  sorry
-
+  induction l with
+  | nil => contradiction
+  | cons head tail ih =>
+    rw [filter] at h
+    cases h' : test head with
+    | false => 
+      rw [h'] at h
+      apply ih h
+    | true =>
+      rw [h'] at h
+      injections hh ht
+      rw [←hh]
+      apply h'
+ 
 --  ### Exercise (4 stars): forall_exists_challenge (Advanced) ⭐⭐⭐⭐
 
 --  Define two recursive functions, `allTrue` and `anyTrue`.
@@ -1257,32 +1425,74 @@ theorem test_pos_of_filter_cons {α : Type}
 --  The first checks whether the given Boolean test returns `true` for
 --  every element of the list.
 
-def allTrue {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def allTrue {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  match l with
+  | [] => true
+  | head :: tail => bif test head then allTrue test tail else false
 
-example : allTrue Nat.odd [1, 3, 5, 7, 9] = true := sorry
-example : allTrue not [false, false] = true := sorry
-example : allTrue Nat.even [0, 2, 4, 5] = false := sorry
-example : allTrue Nat.even [] = true := sorry
+theorem allTrue_nil {α : Type} {test : α → Bool} : allTrue test [] = true := by rfl
+
+theorem allTrue_cons_of_pos {α : Type} {test : α → Bool} {a : α} {as : List α} (h : test a = true) :
+    allTrue test (a :: as) = allTrue test as := by 
+  rw [allTrue, h, Bool.cond_true]
+
+theorem allTrue_cons_of_neg {α : Type} {test : α → Bool} {a : α} {as : List α} (h : test a = false) : 
+    allTrue test (a :: as) = false := by
+  rw [allTrue, h, Bool.cond_false]
+
+example : allTrue Nat.odd [1, 3, 5, 7, 9] = true := by rfl
+example : allTrue not [false, false] = true := by rfl
+example : allTrue Nat.even [0, 2, 4, 5] = false := by rfl
+example : allTrue Nat.even [] = true := by rfl
 
 --  The second checks whether it returns `true` for at least one element.
 
-def anyTrue {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def anyTrue {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  match l with
+  | [] => false
+  | head :: tail => bif test head then true else anyTrue test tail
 
-example : anyTrue Nat.even [1, 3, 4, 7] = true := sorry
-example : anyTrue Nat.odd [0, 2, 4, 6] = false := sorry
-example : anyTrue not [true, true, false] = true := sorry
-example : anyTrue Nat.even [] = false := sorry
+theorem anyTrue_nil {α : Type} {test : α → Bool} : anyTrue test [] = false := by rfl
+
+theorem anyTrue_cons_of_pos {α : Type} {test : α → Bool} {a : α} {as : List α} (h : test a = true) :
+    anyTrue test (a :: as) = true := by
+  rw [anyTrue, h, Bool.cond_true]
+
+theorem anyTrue_cons_of_neg {α : Type} {test : α → Bool} {a : α} {as : List α} (h : test a = false) :
+    anyTrue test (a :: as) = anyTrue test as := by
+  rw [anyTrue, h, Bool.cond_false]
+
+example : anyTrue Nat.even [1, 3, 4, 7] = true := by rfl
+example : anyTrue Nat.odd [0, 2, 4, 6] = false := by rfl
+example : anyTrue not [true, true, false] = true := by rfl
+example : anyTrue Nat.even [] = false := by rfl
 
 --  Next, define a *nonrecursive* version of `anyTrue` — call it `anyTrue'`
 --  — using `allTrue` and `not`.
 
-def anyTrue' {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def anyTrue' {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  !allTrue (!test ·) l
+
+theorem anyTrue'_nil {α : Type} {test : α → Bool} : anyTrue' test [] = false := by rfl
+
+theorem anyTrue'_cons_of_pos {α : Type} {test : α → Bool} {a : α} {as : List α} (h : test a = true) :
+    anyTrue' test (a :: as) = true := by
+  rw [anyTrue', allTrue, h, Bool.not_true, Bool.cond_false, Bool.not_false]
 
 --  Finally, prove a theorem `anyTrue_eq_anyTrue` stating that `anyTrue'`
 --  and `anyTrue` have the same behavior.
 
 theorem anyTrue_eq_anyTrue (α : Type) (test : α → Bool) (l : List α) :
     anyTrue test l = anyTrue' test l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons head tail ih => 
+    cases h : test head with
+    | false => 
+      rw [anyTrue, anyTrue', allTrue, h, Bool.not_false, Bool.cond_true, Bool.cond_false]
+      apply ih
+    | true =>
+      rw [anyTrue, anyTrue', allTrue, h, Bool.cond_true, Bool.not_true, Bool.cond_false, Bool.not_false]
+
 
 -- Source revision: c2b0773, committed 2026-10-31 04:26 UTC
