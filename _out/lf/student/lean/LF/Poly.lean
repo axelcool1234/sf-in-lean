@@ -391,12 +391,19 @@ inductive Grumble (α : Type) : Type where
 --  Which of the following are well-typed elements of `Grumble α` for some
 --  type `α`? (Add YES or NO to each line.)
 --  - `Grumble.d (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.d Mumble (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.d Bool (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.e Bool true`
+--     YES
 --  - `@Grumble.e Mumble (Mumble.b Mumble.c 0)`
+--     YES
 --  - `@Grumble.e Bool (Mumble.b Mumble.c 0)`
+--     NO
 --  - `Mumble.c`
+--     NO
 
 --  #### Exercises
 
@@ -428,15 +435,25 @@ theorem rev_cons {α : Type} {x : α} {l : List α} :
 
 theorem append_nil {α : Type} {l : List α} :
     l ++ [] = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih => 
+    rw [List.cons_append, ih]
 
 theorem append_assoc {α : Type} {l₁ l₂ l₃ : List α} :
     l₁ ++ l₂ ++ l₃ = l₁ ++ (l₂ ++ l₃) := by
-  sorry
+  induction l₁ with
+  | nil => rfl
+  | cons h t ih =>
+    rw [List.cons_append, List.cons_append, List.cons_append, ih]
 
 theorem append_length {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).length = l₁.length + l₂.length := by
-  sorry
+  induction l₁ with
+  | nil => 
+    rw [List.nil_append, List.length, Nat.zero_add]
+  | cons h t ih =>
+    rw [List.cons_append, List.length_cons, ih, List.length_cons, Nat.add_right_comm]
 
 --  ### Exercise (2 stars): more_poly_exercises ⭐⭐
 
@@ -444,11 +461,19 @@ theorem append_length {α : Type} {l₁ l₂ : List α} :
 
 theorem reverse_append {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).rev = l₂.rev ++ l₁.rev := by
-  sorry
+  induction l₁ with
+  | nil => 
+    rw [List.nil_append, List.rev, List.append_nil]
+  | cons h t ih =>
+    rw [List.cons_append, List.rev, ih, List.rev, List.append_assoc]
 
 theorem reverse_reverse {α : Type} (l : List α) :
     l.rev.rev = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [rev_cons, reverse_append, ih, List.rev, rev_nil]
+    rfl
 
 --  ### Polymorphic Pairs
 
@@ -544,16 +569,28 @@ theorem zip_cons_cons {α β : Type} {x : α} {y : β} {l₁ : List α} {l₂ : 
 --  you can use `dsimp only` to simplify expressions accessing the `fst` or
 --  `snd` elements of a pair.
 
-def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β := sorry
+def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β :=
+  match l with
+  | [] => ([], [])
+  | h :: t => 
+    let res := unzip t
+    (h.fst :: res.fst, h.snd :: res.snd)
+
+theorem unzip_nil {α β : Type} : unzip ([] : List (α × β)) = ([], []) := by
+  rfl
+
+theorem unzip_cons {α β : Type} {h : α × β} {t : List (α × β)} : 
+    unzip (h :: t) = (h.fst :: (unzip t).fst, h.snd :: (unzip t).snd) := by
+  rfl
 
 theorem unzip_test1 : unzip [(1, false), (2, true)] = ([1, 2], [false, true]) := by
-  sorry
+  rw [unzip_cons, unzip_cons, unzip_nil]
 
 theorem unzip_test_fst : (unzip [(1, false), (2, true)]).fst = [1, 2] := by
-  sorry
+  rw [unzip_cons, unzip_cons, unzip_nil]
 
 theorem unzip_test_snd : (unzip [(1, false), (2, true)]).snd = [false, true] := by
-  sorry
+  rw [unzip_cons, unzip_cons, unzip_nil]
 
 --  ### Polymorphic Options
 
@@ -599,16 +636,20 @@ example : nth? [true] 2 = none := by rfl
 --  function from the last chapter. Be sure that it passes the unit tests
 --  below.
 
-def head? {α : Type} (l : List α) : Option α := sorry
+def head? {α : Type} (l : List α) : Option α :=
+  match l with
+  | [] => none
+  | h :: _ => h
 
-theorem head?_nil {α : Type} : head? ([] : List α) = none := sorry
+theorem head?_nil {α : Type} : head? ([] : List α) = none := by
+  rfl
 
-theorem head?_cons {α : Type} {head : α} {tail : List α} : head? (head :: tail) = some head :=
-  sorry
+theorem head?_cons {α : Type} {head : α} {tail : List α} : head? (head :: tail) = some head := by
+  rfl
 
-theorem test_head?1 : head? [1, 2] = some 1 := sorry
+theorem test_head?1 : head? [1, 2] = some 1 := by rfl
 
-theorem test_head?2 : head? [[1], [2]] = some [1] := sorry
+theorem test_head?2 : head? [[1], [2]] = some [1] := by rfl
 
 --  ## Functions as Data
 
@@ -753,11 +794,11 @@ example : filter (·.length == 1)
 --  `filterEvenGt7` that takes a list of natural numbers as input and
 --  returns a list of just those that are even and greater than `7`.
 
-def filterEvenGt7 (l : List Nat) : List Nat := sorry
+def filterEvenGt7 (l : List Nat) : List Nat := filter (fun n => n.even && n > 7) l
 
-theorem test_filterEvenGt7_1 : filterEvenGt7 [1, 2, 6, 9, 10, 3, 12, 8] = [10, 12, 8] := sorry
+theorem test_filterEvenGt7_1 : filterEvenGt7 [1, 2, 6, 9, 10, 3, 12, 8] = [10, 12, 8] := by rfl
 
-theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := sorry
+theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := by rfl
 
 --  ### Exercise (3 stars): partition ⭐⭐⭐
 
@@ -769,10 +810,10 @@ theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := sorry
 --  elements in the two sublists should be the same as their order in the
 --  original list.
 
-def partition {α : Type} (test : α → Bool) (l : List α) : List α × List α := sorry
+def partition {α : Type} (test : α → Bool) (l : List α) : List α × List α := ⟨filter test l, filter (!test ·) l⟩
 
-theorem test_partition1 : partition (· % 2 != 0) [1, 2, 3, 4, 5] = ([1, 3, 5], [2, 4]) := sorry
-theorem test_partition2 : partition (fun _ => false) [5, 9, 0] = ([], [5, 9, 0]) := sorry
+theorem test_partition1 : partition (· % 2 != 0) [1, 2, 3, 4, 5] = ([1, 3, 5], [2, 4]) := by rfl
+theorem test_partition2 : partition (fun _ => false) [5, 9, 0] = ([], [5, 9, 0]) := by rfl
 
 --  ### Map
 
@@ -838,11 +879,19 @@ theorem map_cons {α : Type} {β : Type} {f : α → β} {x : α} {l : List α} 
 --  Show that `map` and `List.rev` commute. (Hint: You may need to define
 --  an auxiliary lemma.)
 
---  FILL IN HERE
+theorem map_append {α : Type} {β : Type} {f : α → β} {l₁ l₂ : List α} :
+    map f (l₁ ++ l₂) = map f l₁ ++ map f l₂ := by
+  induction l₁ with
+  | nil => rfl
+  | cons h t ih =>
+    rw [List.cons_append, map, map, ih, List.cons_append]
 
 theorem map_rev {α : Type} {β : Type} {f : α → β} {l : List α} :
     map f l.rev = (map f l).rev := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [map, rev_cons, map_append, ih, map, map_nil, rev_cons]
 
 --  ### Exercise (2 stars): flat_map ⭐⭐
 
@@ -854,18 +903,21 @@ theorem map_rev {α : Type} {β : Type} {f : α → β} {l : List α} :
 --      flatMap (fun n => [n, n + 1, n + 2]) [1, 5, 10]
 --        = [1, 2, 3, 5, 6, 7, 10, 11, 12]
 
-def flatMap {α β : Type} (f : α → List β) (l : List α) : List β := sorry
+def flatMap {α β : Type} (f : α → List β) (l : List α) : List β := 
+  match l with
+  | [] => []
+  | h :: t => f h ++ flatMap f t
 
 theorem test_flatMap : flatMap (fun n => [n, n, n]) [1, 5, 4]
-  = [1, 1, 1, 5, 5, 5, 4, 4, 4] := sorry
+  = [1, 1, 1, 5, 5, 5, 4, 4, 4] := by rfl
 
 --  (End of exercise)
 
-theorem flatMap_nil {α : Type} {β : Type} (f : α → List β) : flatMap f [] = [] :=
-   sorry
+theorem flatMap_nil {α : Type} {β : Type} (f : α → List β) : flatMap f [] = [] := by
+   rfl
 
 theorem flatMap_cons {α : Type} {β : Type} (f : α → List β) h t :
-   flatMap f (h :: t) = f h ++ flatMap f t := sorry
+   flatMap f (h :: t) = f h ++ flatMap f t := by rfl
 
 --  Lists are not the only inductive type for which `map` makes sense. Here
 --  is a `map` for the `Option` type:
@@ -1048,18 +1100,30 @@ example : foldLength [4, 7, 0] = 3 := by rfl
 
 theorem fold_length_correct {α : Type} {l : List α} :
     foldLength l = l.length := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [foldLength] at ih
+    rw [foldLength, fold, List.length, ih]
+    
 
 --  ### Exercise (3 stars): fold_map (Manually graded) ⭐⭐⭐
 
 --  We can also define `map` in terms of `fold`. Finish `foldMap` below.
 
-def foldMap {α β : Type} (f : α → β) (l : List α) : List β := sorry
+def foldMap {α β : Type} (f : α → β) (l : List α) : List β :=
+  match l with
+  | [] => []
+  | h :: t => f h :: foldMap f t
 
 --  Write down a theorem `fold_map_correct` stating that `foldMap` is
 --  correct, and prove it in Lean.
 
---  FILL IN HERE
+theorem fold_map_correct {α : Type} {f : α → β} {l : List α} : foldMap f l = map f l := by
+  induction l with
+  | nil => rfl
+  | cons head tail ih =>
+    rw [foldMap, map, ih]
 
 --  ### Exercise (2 stars): currying (Advanced) ⭐⭐
 
@@ -1091,7 +1155,7 @@ def prodCurry {α β γ : Type} (f : α × β → γ) (x : α) (y : β) : γ := 
 --  As an exercise, define its inverse, `prodUncurry`. Then prove the
 --  theorems below to show that the two are really inverses.
 
-def prodUncurry {α β γ : Type} (f : α → β → γ) (p : α × β) : γ := sorry
+def prodUncurry {α β γ : Type} (f : α → β → γ) (p : α × β) : γ := f p.1 p.2
 
 --  As a (trivial) example of the usefulness of currying, we can use it to
 --  shorten one of the examples that we saw above:
@@ -1112,11 +1176,11 @@ example : map (Nat.add 3) [2, 0, 2] = [5, 3, 5] := by rfl
 
 theorem uncurry_curry {α β γ : Type} {x : α} {y : β} {f : α → β → γ} :
     prodCurry (prodUncurry f) x y = f x y := by
-  sorry
+  rfl
 
 theorem curry_uncurry {α β γ : Type} {p : α × β} {f : α × β → γ} :
     prodUncurry (prodCurry f) p = f p := by
-  sorry
+  rfl
 
 --  ### Exercise (2 stars): nth_error_informal (Advanced, Optional, Manually graded) ⭐⭐
 
@@ -1216,11 +1280,11 @@ example : two  Nat Nat.succ 0 = 2 := by rfl
 --  `fun X f x => f^(n+1) x` as output. In other words, do it `n` times,
 --  then do it once more.
 
-def scc (n : CNat) : CNat := sorry
+def scc (n : CNat) : CNat := fun (α : Type) (f : α → α) (x : α) => f (n α f x)
 
-example : scc zero = one := sorry
-theorem scc_2 : scc one = two := sorry
-theorem scc_3 : scc two = three := sorry
+example : scc zero = one := by rfl
+theorem scc_2 : scc one = two := by rfl
+theorem scc_3 : scc two = three := by rfl
 
 --  ### Exercise (3 stars): church_plus (Advanced) ⭐⭐⭐
 
@@ -1231,11 +1295,11 @@ theorem scc_3 : scc two = three := sorry
 --
 --  Hint: the "zero" argument to a Church numeral need not be just `x`.
 
-def plus (n m : CNat) : CNat := sorry
+def plus (n m : CNat) : CNat := fun (α : Type) (f : α → α) (x : α) => m α f (n α f x)
 
-theorem plus_1 : plus zero one = one := sorry
-theorem plus_2 : plus two three = plus three two := sorry
-theorem plus_3 : plus (plus two two) three = plus one (plus three three) := sorry
+theorem plus_1 : plus zero one = one := by rfl
+theorem plus_2 : plus two three = plus three two := by rfl
+theorem plus_3 : plus (plus two two) three = plus one (plus three three) := by rfl
 
 --  ### Exercise (3 stars): church_mult (Advanced) ⭐⭐⭐
 
@@ -1252,12 +1316,12 @@ theorem plus_3 : plus (plus two two) three = plus one (plus three three) := sorr
 --  paradox in which a type contains itself. So leave the type argument
 --  unchanged.
 
-def mult (n m : CNat) : CNat := sorry
+def mult (n m : CNat) : CNat := fun (α : Type) (f : α → α) (x : α) => m α (n α f) x
 
 
-theorem mult_1 : mult one one = one := sorry
-theorem mult_2 : mult zero (plus three three) = zero := sorry
-theorem mult_3 : mult two three = plus three three := sorry
+theorem mult_1 : mult one one = one := by rfl
+theorem mult_2 : mult zero (plus three three) = zero := by rfl
+theorem mult_3 : mult two three = plus three three := by rfl
 
 --  ### Exercise (3 stars): church_exp (Advanced) ⭐⭐⭐
 
@@ -1269,11 +1333,11 @@ theorem mult_3 : mult two three = plus three three := sorry
 --  Hint: the type argument to a Church numeral need not just be `α`.
 --  Finding the right type can be tricky.
 
-def exp (n m : CNat) : CNat := sorry
+def exp (n m : CNat) : CNat := fun (α : Type) (f : α → α) (x : α) => m (α → α) (n α) f x
 
-theorem exp_1 : exp two two = plus two two := sorry
-theorem exp_2 : exp three zero = one := sorry
-theorem exp_3 : exp three two = plus (mult two (mult two two)) one := sorry
+theorem exp_1 : exp two two = plus two two := by rfl
+theorem exp_2 : exp three zero = one := by rfl
+theorem exp_3 : exp three two = plus (mult two (mult two two)) one := by rfl
 
 --  (End of exercise)
 
