@@ -391,12 +391,19 @@ inductive Grumble (α : Type) : Type where
 --  Which of the following are well-typed elements of `Grumble α` for some
 --  type `α`? (Add YES or NO to each line.)
 --  - `Grumble.d (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.d Mumble (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.d Bool (Mumble.b Mumble.a 5)`
+--     YES
 --  - `@Grumble.e Bool true`
+--     YES
 --  - `@Grumble.e Mumble (Mumble.b Mumble.c 0)`
+--     YES
 --  - `@Grumble.e Bool (Mumble.b Mumble.c 0)`
+--     NO
 --  - `Mumble.c`
+--     NO
 
 --  #### Exercises
 
@@ -428,15 +435,25 @@ theorem rev_cons {α : Type} {x : α} {l : List α} :
 
 theorem append_nil {α : Type} {l : List α} :
     l ++ [] = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih => 
+    rw [List.cons_append, ih]
 
 theorem append_assoc {α : Type} {l₁ l₂ l₃ : List α} :
     l₁ ++ l₂ ++ l₃ = l₁ ++ (l₂ ++ l₃) := by
-  sorry
+  induction l₁ with
+  | nil => rfl
+  | cons h t ih =>
+    rw [List.cons_append, List.cons_append, List.cons_append, ih]
 
 theorem append_length {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).length = l₁.length + l₂.length := by
-  sorry
+  induction l₁ with
+  | nil => 
+    rw [List.nil_append, List.length, Nat.zero_add]
+  | cons h t ih =>
+    rw [List.cons_append, List.length_cons, ih, List.length_cons, Nat.add_right_comm]
 
 --  ### Exercise (2 stars): more_poly_exercises ⭐⭐
 
@@ -444,11 +461,19 @@ theorem append_length {α : Type} {l₁ l₂ : List α} :
 
 theorem reverse_append {α : Type} {l₁ l₂ : List α} :
     (l₁ ++ l₂).rev = l₂.rev ++ l₁.rev := by
-  sorry
+  induction l₁ with
+  | nil => 
+    rw [List.nil_append, List.rev, List.append_nil]
+  | cons h t ih =>
+    rw [List.cons_append, List.rev, ih, List.rev, List.append_assoc]
 
 theorem reverse_reverse {α : Type} (l : List α) :
     l.rev.rev = l := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [rev_cons, reverse_append, ih, List.rev, rev_nil]
+    rfl
 
 --  ### Polymorphic Pairs
 
@@ -544,16 +569,21 @@ theorem zip_cons_cons {α β : Type} {x : α} {y : β} {l₁ : List α} {l₂ : 
 --  you can use `dsimp only` to simplify expressions accessing the `fst` or
 --  `snd` elements of a pair.
 
-def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β := sorry
+def unzip {α : Type} {β : Type} (l : List (α × β)) : List α × List β :=
+  match l with
+  | [] => ⟨[], []⟩
+  | ⟨x, y⟩ :: t => 
+    let res := unzip t
+    ⟨x :: res.fst, y :: res.snd⟩
 
 theorem unzip_test1 : unzip [(1, false), (2, true)] = ([1, 2], [false, true]) := by
-  sorry
+  rfl
 
 theorem unzip_test_fst : (unzip [(1, false), (2, true)]).fst = [1, 2] := by
-  sorry
+  rfl
 
 theorem unzip_test_snd : (unzip [(1, false), (2, true)]).snd = [false, true] := by
-  sorry
+  rfl
 
 --  ### Polymorphic Options
 
@@ -599,16 +629,20 @@ example : nth? [true] 2 = none := by rfl
 --  function from the last chapter. Be sure that it passes the unit tests
 --  below.
 
-def head? {α : Type} (l : List α) : Option α := sorry
+def head? {α : Type} (l : List α) : Option α :=
+  match l with
+  | [] => none
+  | h :: _ => h
 
-theorem head?_nil {α : Type} : head? ([] : List α) = none := sorry
+theorem head?_nil {α : Type} : head? ([] : List α) = none := by
+  rfl
 
-theorem head?_cons {α : Type} {head : α} {tail : List α} : head? (head :: tail) = some head :=
-  sorry
+theorem head?_cons {α : Type} {head : α} {tail : List α} : head? (head :: tail) = some head := by
+  rfl
 
-theorem test_head?1 : head? [1, 2] = some 1 := sorry
+theorem test_head?1 : head? [1, 2] = some 1 := by rfl
 
-theorem test_head?2 : head? [[1], [2]] = some [1] := sorry
+theorem test_head?2 : head? [[1], [2]] = some [1] := by rfl
 
 --  ## Functions as Data
 
@@ -753,11 +787,11 @@ example : filter (·.length == 1)
 --  `filterEvenGt7` that takes a list of natural numbers as input and
 --  returns a list of just those that are even and greater than `7`.
 
-def filterEvenGt7 (l : List Nat) : List Nat := sorry
+def filterEvenGt7 (l : List Nat) : List Nat := filter (fun n => n.even && n > 7) l
 
-theorem test_filterEvenGt7_1 : filterEvenGt7 [1, 2, 6, 9, 10, 3, 12, 8] = [10, 12, 8] := sorry
+theorem test_filterEvenGt7_1 : filterEvenGt7 [1, 2, 6, 9, 10, 3, 12, 8] = [10, 12, 8] := by rfl
 
-theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := sorry
+theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := by rfl
 
 --  ### Exercise (3 stars): partition ⭐⭐⭐
 
@@ -769,10 +803,10 @@ theorem test_filterEvenGt7_2 : filterEvenGt7 [5, 2, 6, 19, 129] = [] := sorry
 --  elements in the two sublists should be the same as their order in the
 --  original list.
 
-def partition {α : Type} (test : α → Bool) (l : List α) : List α × List α := sorry
+def partition {α : Type} (test : α → Bool) (l : List α) : List α × List α := ⟨filter test l, filter (!test ·) l⟩
 
-theorem test_partition1 : partition (· % 2 != 0) [1, 2, 3, 4, 5] = ([1, 3, 5], [2, 4]) := sorry
-theorem test_partition2 : partition (fun _ => false) [5, 9, 0] = ([], [5, 9, 0]) := sorry
+theorem test_partition1 : partition (· % 2 != 0) [1, 2, 3, 4, 5] = ([1, 3, 5], [2, 4]) := by rfl
+theorem test_partition2 : partition (fun _ => false) [5, 9, 0] = ([], [5, 9, 0]) := by rfl
 
 --  ### Map
 
@@ -838,11 +872,19 @@ theorem map_cons {α : Type} {β : Type} {f : α → β} {x : α} {l : List α} 
 --  Show that `map` and `List.rev` commute. (Hint: You may need to define
 --  an auxiliary lemma.)
 
---  FILL IN HERE
+theorem map_append {α : Type} {β : Type} {f : α → β} {l₁ l₂ : List α} :
+    map f (l₁ ++ l₂) = map f l₁ ++ map f l₂ := by
+  induction l₁ with
+  | nil => rfl
+  | cons h t ih =>
+    rw [List.cons_append, map, map, ih, List.cons_append]
 
 theorem map_rev {α : Type} {β : Type} {f : α → β} {l : List α} :
     map f l.rev = (map f l).rev := by
-  sorry
+  induction l with
+  | nil => rfl
+  | cons h t ih =>
+    rw [map, rev_cons, map_append, ih, map, map_nil, rev_cons]
 
 --  ### Exercise (2 stars): flat_map ⭐⭐
 
