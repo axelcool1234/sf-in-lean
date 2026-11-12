@@ -297,7 +297,10 @@ example : 3 + 4 = 7 ∧ 2 * 2 = 4 := by
 --  ### Exercise (2 stars): add_is_zero ⭐⭐
 
 theorem Nat.add_is_zero (n m : Nat) : n + m = 0 → n = 0 ∧ m = 0 := by
-  sorry
+  intro h
+  cases m with
+  | zero => exact ⟨h, rfl⟩
+  | succ m' => contradiction
 
 --  (End of exercise)
 
@@ -371,7 +374,7 @@ example (a b : Prop) (h : a ∧ b) : a := by
 --  ### Exercise (1 star): proj2 (Optional) ⭐
 
 theorem right (a b : Prop) (h : a ∧ b) : b := by
-  sorry
+  exact h.right
 
 --  (End of exercise)
 
@@ -398,7 +401,7 @@ theorem and_commute' (a b : Prop) (h : a ∧ b) : b ∧ a := by
 
 theorem and_associate (a b c : Prop) (h : a ∧ (b ∧ c)) : (a ∧ b) ∧ c := by
   constructor
-  · sorry
+  · exact ⟨h.left, h.right.left⟩
   · exact h.right.right
 
 --  ### Disjunction
@@ -456,12 +459,27 @@ theorem Nat.zero_or_succ (n : Nat) : n = 0 ∨ n = (n - 1).succ := by
 --  ### Exercise (2 stars): mul_is_zero ⭐⭐
 
 theorem Nat.mul_is_zero (n m : Nat) (h : n * m = 0) : n = 0 ∨ m = 0 := by
-  sorry
+  cases n with
+  | zero => 
+    left
+    rfl
+  | succ n' => 
+    right
+    rw [Nat.mul_eq_zero] at h
+    obtain hnzero | hmzero := h
+    · contradiction
+    · apply hmzero
 
 --  ### Exercise (1 star): or_commute ⭐
 
 theorem or_commute (a b : Prop) (h : a ∨ b) : b ∨ a := by
-  sorry
+  cases h with
+  | inl hleft => 
+    right
+    apply hleft
+  | inr hright => 
+    left
+    apply hright
 
 --  ### Falsehood and Negation
 
@@ -511,7 +529,8 @@ theorem ex_falso_quodlibet (a : Prop) (h : False) : a := by
 
 theorem not_implies_other_not (a : Prop) (h : ¬ a) :
     (∀ c : Prop, a → c) := by
-  sorry
+  intro c a'
+  contradiction
 
 --  (End of exercise)
 
@@ -561,7 +580,9 @@ theorem double_neg (a : Prop) (ha : a) : ¬ ¬ a := by
 --  ### Exercise (1 star): contrapositive ⭐
 
 theorem contrapositive (a b : Prop) (h : a → b) : (¬ b → ¬ a) := by
-  sorry
+  intro hnb ha
+  apply h at ha
+  contradiction
 
 --  ### Exercise (1 star): not_PNP_informal (Advanced, Manually graded) ⭐
 
@@ -576,7 +597,15 @@ theorem contrapositive (a b : Prop) (h : a → b) : (¬ b → ¬ a) := by
 --  the end of this chapter.
 
 theorem de_morgan_not_or {a b : Prop} (h : ¬ (a ∨ b)) : ¬ a ∧ ¬ b := by
-  sorry
+  constructor
+  · intro ha
+    apply h
+    left
+    exact ha
+  · intro hb
+    apply h
+    right
+    exact hb
 
 --  ### Exercise (1 star): not_succ_inverse_pred (Optional) ⭐
 
@@ -586,7 +615,9 @@ theorem de_morgan_not_or {a b : Prop} (h : ¬ (a ∨ b)) : ¬ a ∧ ¬ b := by
 --  being disproved:
 
 theorem not_succ_pred_n : ¬ (∀ n : Nat, n.pred + 1 = n) := by
-  sorry
+  intro hinverse
+  specialize hinverse 0
+  contradiction
 
 --  (End of exercise)
 
@@ -756,10 +787,27 @@ theorem discr_example (n : Nat) : ¬ (0 = n + 1) := by
 --  the `contradiction` tactic.
 
 --  FILL IN HERE
+def List.IsNil {α : Type} (l : List α) : Prop :=
+  match l with
+  | [] => True
+  | _ => False
+
+theorem isNil_nil {α : Type} : List.IsNil ([] : List α) := by
+  constructor
+
+theorem isNil_cons {α : Type} (a : α) (b : List α) : ¬ List.IsNil (a :: b) := by
+  rw [List.IsNil]
+  · intro h
+    exact h
+  · intro h
+    contradiction
 
 theorem nil_is_not_cons {α : Type} (x : α) (xs : List α) :
     ¬ ([] = x :: xs) := by
-  sorry
+  intro h
+  apply isNil_cons x xs
+  rw [←h]
+  constructor
 
 --  ### Logical Equivalence
 
@@ -805,25 +853,63 @@ theorem not_true_iff_false (b : Bool) : b ≠ true ↔ b = false := by
 --  prove that it is also reflexive and transitive.
 
 theorem iff_refl (a : Prop) : a ↔ a := by
-  sorry
+  constructor <;> intro <;> assumption
 
 theorem iff_trans (a b c : Prop) (h₁ : a ↔ b) (h₂ : b ↔ c) : a ↔ c := by
-  sorry
+  constructor
+  · intro ha
+    have hb := h₁.mp ha
+    apply h₂.mp hb
+  · intro hc
+    have hb := h₂.mpr hc
+    apply h₁.mpr hb
 
 --  ### Exercise (3 stars): iff_practice ⭐⭐⭐
 
 --  Prove the following theorems about `Iff`:
 
 theorem or_associate (a b c : Prop) : a ∨ (b ∨ c) ↔ (a ∨ b) ∨ c := by
-  sorry
+  constructor
+  · intro h
+    obtain ha | (hb | hc) := h
+    · left; left
+      exact ha
+    · left; right
+      exact hb
+    · right
+      exact hc
+  · intro h
+    obtain (ha | hb) | hc := h
+    · left
+      exact ha
+    · right; left
+      exact hb
+    · right; right
+      exact hc
 
 theorem mul_eq_0 (n m : Nat) :
     n * m = 0 ↔ n = 0 ∨ m = 0 := by
-  sorry
+  constructor
+  · apply Nat.mul_is_zero
+  · apply Nat.factor_is_zero
 
 theorem or_distributes_over_and (a b c : Prop) :
     a ∨ (b ∧ c) ↔ (a ∨ b) ∧ (a ∨ c) := by
-  sorry
+  constructor
+  · intro h
+    obtain ha | ⟨hb, hc⟩ := h
+    · constructor <;> left <;> assumption
+    · constructor <;> right <;> assumption
+  · intro h
+    obtain ⟨(ha | hb), (ha | hc)⟩ := h
+    · left
+      exact ha
+    · left
+      exact ha
+    · left
+      exact ha
+    · right
+      exact ⟨hb, hc⟩
 
 --  ### Existential Quantification
 
@@ -876,7 +962,9 @@ example (n : Nat) : (∃ m, n = m + 4) → (∃ o, n = o + 2) := by
 
 theorem dist_not_exists (α : Type) (p : α → Prop) (h : ∀ x, p x) :
     ¬ (∃ x, ¬ p x) := by
-  sorry
+  intro ⟨x, hnpx⟩
+  apply hnpx
+  exact h x
 
 --  ### Exercise (2 stars): dist_exists_or ⭐⭐
 
@@ -884,7 +972,21 @@ theorem dist_not_exists (α : Type) (p : α → Prop) (h : ∀ x, p x) :
 
 theorem dist_exists_or (α : Type) (p q : α → Prop) :
     (∃ x, p x ∨ q x) ↔ (∃ x, p x) ∨ (∃ x, q x) := by
-  sorry
+  constructor
+  · intro he
+    obtain ⟨x, (hpx | hqx)⟩ := he
+    · left
+      exact ⟨x, hpx⟩
+    · right
+      exact ⟨x, hqx⟩
+  · intro he
+    obtain ⟨x, hpx⟩ | ⟨x, hqx⟩ := he
+    · exists x
+      left
+      exact hpx
+    · exists x
+      right
+      exact hqx
 
 --  ## Recap: Logical Connectives in Lean
 
@@ -985,8 +1087,29 @@ theorem List.In_map {α β : Type} {f : α → β} {xs : List α} {x : α}
 theorem List.In_map_iff {α β : Type} {f : α → β} {xs : List α} {y : β} :
     In y (map f xs) ↔ ∃ x, f x = y ∧ In x xs := by
   constructor
-  · sorry
-  · sorry
+  · intro h
+    induction xs with
+    | nil => contradiction
+    | cons head tail ih =>
+      rw [List.map_cons, List.In_cons] at h
+      obtain h | h := h
+      · exists head
+        constructor
+        · rw [h]
+        · rw [List.In]
+          left
+          rfl
+      · obtain ⟨x, h₁, h₂⟩ := ih h
+        exists x
+        constructor
+        · assumption
+        · rw [List.In]
+          right
+          assumption
+  · intro ⟨x, h₁, h₂⟩
+    rw [←h₁]
+    apply List.In_map
+    assumption
 
 --  ### Exercise (3 stars): All ⭐⭐⭐
 
@@ -1000,15 +1123,50 @@ theorem List.In_map_iff {α β : Type} {f : α → β} {xs : List α} {y : β} :
 --  (Of course, your definition should *not* just restate the left-hand
 --  side of `All_In`.)
 
-def List.All {α : Type} (p : α → Prop) (l : List α) : Prop := sorry
-theorem List.All_nil {α : Type} {a : α → Prop} : List.All a [] := sorry
+def List.All {α : Type} (p : α → Prop) (l : List α) : Prop :=
+  match l with
+  | [] => True
+  | head :: tail => p head ∧ List.All p tail
+
+theorem List.All_nil {α : Type} {a : α → Prop} : List.All a [] := by
+  trivial
 
 theorem List.All_cons {α : Type} {p : α → Prop} {x : α} {l : List α} :
-    List.All p (x :: l) = (p x ∧ All p l) := sorry
+    List.All p (x :: l) = (p x ∧ All p l) := by
+  rw [List.All]
 
 theorem List.All_In {α : Type} {p : α → Prop} {l : List α} :
     (∀ x : α, In x l → p x) ↔ All p l := by
-  sorry
+  -- To prove iff, prove both sides
+  constructor
+  · intro h -- If, for all x where x is in l implies p x, then All p x
+    induction l with -- Induction on the list where All p x
+    | nil => trivial -- x cannot be in an empty list
+    | cons head tail ih =>
+      rw [List.All] -- p head and All p tail
+      constructor
+      · apply h head -- Show that p head
+        rw [List.In] -- We know for all x where x in l, p x. So we know
+        left         -- that if head in l, p head. We must show head in l
+        rfl          -- This is trivial since we made l = (head :: tail).
+      · apply ih -- Show that All p tail. This is the same as showing for all x in tail, p x.
+        intro x hin -- Given x and x in tail, show p x.
+        apply h -- To show p x, we must show that x in l.
+        rw [List.In] -- This is the same as showing x = head or x in tail
+        right -- We know x in tail
+        exact hin
+  · intro hall x hin -- If All p x, then for all x where x is in l implies p x
+    induction l with -- Given All p l, and all x in l, we must show that p x.
+    | nil => contradiction -- x cannot be in an empty list
+    | cons head tail ih =>
+      rw [List.In] at hin -- All x in l is the same as x = head or x in tail
+      rw [List.All] at hall -- All p l is the same as p head and All p tail
+      obtain h | h := hin -- Show p x when x = head or when x in tail
+      · rw [h] -- when x = head, showing p x is the same as showing p head. 
+        exact hall.left -- We know that p head and All p tail
+      · apply ih -- When x in tail, use induction hypothesis: We must show x in tail and All p tail
+        exact hall.right -- We know that p head and All p tail
+        exact h -- We trivially know x in tail
 
 --  ### Exercise (2 stars): CombineOddEven (Optional) ⭐⭐
 
@@ -1017,7 +1175,8 @@ theorem List.All_In {α : Type} {p : α → Prop} {l : List α} :
 --  return a predicate `p` such that `p n` is equivalent to `Odd n` when
 --  `n` is odd and equivalent to `Even n` otherwise.
 
-def CombineOddEven (Odd Even : Nat → Prop) : Nat → Prop := sorry
+def CombineOddEven (Odd Even : Nat → Prop) : Nat → Prop :=
+  (fun n => bif Nat.odd n then Odd n else Even n)
 
 --  To test your definition, prove the following facts:
 
@@ -1026,21 +1185,32 @@ theorem combineOddEven_intro (Odd Even : Nat → Prop)
     (hOdd : Nat.odd n = true → Odd n)
     (hEven : Nat.odd n = false → Even n) :
     CombineOddEven Odd Even n := by
-  sorry
+  rw [CombineOddEven]
+  cases h : n.odd with
+  | false => 
+    rw [Bool.cond_false]
+    apply hEven
+    exact h
+  | true => 
+    rw [Bool.cond_true]
+    apply hOdd
+    exact h
 
 theorem combineOddEven_elim_odd
     (Odd Even : Nat → Prop)
     (n : Nat)
     (h : CombineOddEven Odd Even n)
     (hOdd : Nat.odd n = true) : Odd n := by
-  sorry
+  rw [CombineOddEven, hOdd, Bool.cond_true] at h
+  exact h
 
 theorem combineOddEven_elim_even
     (Odd Even : Nat → Prop)
     (n : Nat)
     (h : CombineOddEven Odd Even n)
     (hOdd : Nat.odd n = false) : Even n := by
-  sorry
+  rw [CombineOddEven, hOdd, Bool.cond_false] at h
+  exact h
 
 --  ## Applying Theorems to Arguments
 
@@ -1292,7 +1462,24 @@ theorem even_double (k : Nat) :
 
 theorem even_double_conv (n : Nat) : ∃ k : Nat,
     n = bif Nat.even n then Nat.double k else Nat.double k + 1 := by
-  sorry
+  induction n with
+  | zero => exists 0
+  | succ n' ih =>
+    obtain ⟨k, hif⟩ := ih
+    cases h : n'.even with
+    | false =>
+      rw [h, Bool.cond_false] at hif
+      rw [hif]
+      exists (k + 1)
+      rw [hif] at h
+      rw [Nat.even_succ, h, Bool.not_false, Bool.cond_true]
+      rfl
+    | true =>
+      rw [h, Bool.cond_true] at hif
+      rw [hif]
+      exists k
+      rw [hif] at h
+      rw [Nat.even_succ, h, Bool.not_true, Bool.cond_false]
 
 --  (End of exercise)
 
@@ -1427,11 +1614,45 @@ theorem add_beq_true (n m p : Nat) (h : (n == m) = true) :
 
 theorem andb_true_iff (b1 b2 : Bool) :
     (b1 && b2) = true ↔ b1 = true ∧ b2 = true := by
-  sorry
+  constructor
+  · intro h
+    cases b2 with
+    | false =>
+      rw [Bool.and_false] at h
+      contradiction
+    | true =>
+      rw [Bool.and_true] at h
+      trivial
+  · intro h
+    cases b2 with
+    | false =>
+      replace h := h.right
+      contradiction
+    | true =>
+      rw [Bool.and_true]
+      exact h.left
 
 theorem orb_true_iff (b1 b2 : Bool) :
     (b1 || b2) = true ↔ b1 = true ∨ b2 = true := by
-  sorry
+  constructor
+  · intro h
+    cases b2 with
+    | false =>
+      rw [Bool.or_false] at h
+      left
+      exact h
+    | true =>
+      right
+      rfl
+  · intro h
+    cases b2 with
+    | false =>
+      rw [Bool.or_false]
+      obtain h | h := h
+      · exact h
+      · contradiction
+    | true =>
+      rw [Bool.or_true]
 
 --  ### Exercise (3 stars): beqList ⭐⭐⭐
 
@@ -1441,26 +1662,57 @@ theorem orb_true_iff (b1 b2 : Bool) :
 --  function below. To make sure that your definition is correct, prove the
 --  lemma `beqList_true_iff`.
 
-def beqList {α : Type} (beq : α → α → Bool) (xs ys : List α) : Bool := sorry
+def beqList {α : Type} (beq : α → α → Bool) (xs ys : List α) : Bool :=
+  match xs, ys with
+  | [], [] => true
+  | h₁ :: t₁, h₂ :: t₂ => beq h₁ h₂ && beqList beq t₁ t₂
+  | _, _ => false
 
 theorem beqList_nil_nil {α : Type} {beq : α → α → Bool} :
-    beqList beq [] [] = true := sorry
+    beqList beq [] [] = true := by rfl
 
 theorem beqList_cons_cons {α : Type} {beq : α → α → Bool}
     {x y : α} {xs ys : List α} :
-    beqList beq (x :: xs) (y :: ys) = (beq x y && beqList beq xs ys) :=
-  sorry
+    beqList beq (x :: xs) (y :: ys) = (beq x y && beqList beq xs ys) := by
+  rfl
 
 theorem beqList_nil_cons {α : Type} {beq : α → α → Bool}
-    {x : α} {xs : List α} : beqList beq [] (x :: xs) = false := sorry
+    {x : α} {xs : List α} : beqList beq [] (x :: xs) = false := by rfl
 
 theorem beqList_cons_nil {α : Type} {beq : α → α → Bool}
-    {x : α} {xs : List α} : beqList beq (x :: xs) [] = false := sorry
+    {x : α} {xs : List α} : beqList beq (x :: xs) [] = false := by rfl
 
 theorem beqList_true_iff α (beq : α → α → Bool)
     (h : ∀ (x y : α), beq x y = true ↔ x = y) :
     ∀ {xs ys : List α}, beqList beq xs ys = true ↔ xs = ys := by
-  sorry
+  intro xs ys
+  constructor
+  · intro hbeqList
+    induction xs generalizing ys with
+    | nil =>
+      cases ys with
+      | nil => rfl
+      | cons head tail => contradiction
+    | cons h₁ t₁ ih =>
+      cases ys with
+      | nil => contradiction
+      | cons h₂ t₂ =>
+        rw [beqList_cons_cons, Bool.and_eq_true] at hbeqList
+        obtain ⟨hbeq, hbeqTails⟩ := hbeqList
+        have htails := ih hbeqTails
+        specialize h h₁ h₂
+        replace hbeq := h.mp hbeq
+        rw [ih hbeqTails, hbeq]
+  · intro h'
+    induction xs generalizing ys with
+    | nil => 
+      rw [←h', beqList_nil_nil]
+    | cons head tail ih =>
+      rw [←h', beqList_cons_cons, Bool.and_eq_true]
+      constructor
+      · rw [h]
+      · rw [ih]
+        rfl
 
 --  ### Exercise (2 stars): List.allb ⭐⭐
 
@@ -1471,16 +1723,41 @@ theorem beqList_true_iff α (beq : α → α → Bool)
 --  Copy the definition of `List.allb` from Tactics here so that this file
 --  can be graded on its own.
 
-def List.allb {α : Type} (test : α → Bool) (l : List α) : Bool := sorry
+def List.allb {α : Type} (test : α → Bool) (l : List α) : Bool :=
+  match l with
+  | [] => true
+  | head :: tail => test head && allb test tail
 
-theorem List.allb_nil {α : Type} {test : α → Bool} : allb test [] = true := sorry
+theorem List.allb_nil {α : Type} {test : α → Bool} : allb test [] = true := by rfl
 
 theorem List.allb_cons {α : Type} {test : α → Bool} {x : α} {l : List α} :
-    allb test (x :: l) = (test x && allb test l) := sorry
+    allb test (x :: l) = (test x && allb test l) := by rfl
 
 theorem List.allb_true_iff α {test : α → Bool} {l : List α} :
     allb test l = true ↔ All (fun x => test x = true) l := by
-  sorry
+  constructor
+  · intro h
+    induction l with
+    | nil => 
+      rw [All]
+      trivial
+    | cons head tail ih =>
+      rw [allb_cons, Bool.and_eq_true] at h
+      rw [All, h.left]
+      constructor
+      · trivial
+      · apply ih
+        exact h.right
+  · intro h
+    induction l with
+    | nil => rfl
+    | cons head tail ih =>
+      rw [allb_cons, Bool.and_eq_true]
+      rw [All_cons] at h
+      constructor
+      · exact h.left
+      · apply ih
+        exact h.right
 
 --  (Ungraded thought question) Are there any important properties of the
 --  function `List.allb` that are not captured by this specification?
@@ -1636,13 +1913,25 @@ theorem and_comm_flip' (a b c : Prop) : (a ∧ b ∧ c) ↔ (c ∧ b ∧ a) := b
 
 theorem mul_eq_0_ternary (n m p : Nat) :
     n * m * p = 0 ↔ n = 0 ∨ m = 0 ∨ p = 0 := by
-  sorry
+  rw [Nat.mul_eq_zero, Nat.mul_eq_zero, or_assoc]
 
 --  ### Exercise (2 stars): In_append_iff ⭐⭐
 
 theorem In_append_iff (α : Type) (l l' : List α) (x : α) :
     List.In x (l ++ l') ↔ List.In x l ∨ List.In x l' := by
-  sorry
+  induction l with
+  | nil => 
+    rw [List.nil_append]
+    constructor
+    · intro h
+      right
+      exact h
+    · intro h
+      cases h
+      · contradiction
+      · assumption
+  | cons head tail ih =>
+    rw [List.cons_append, List.In_cons, List.In_cons, ih, or_assoc]
 
 --  ### Exercise (1 star): beq_neq_false ⭐
 
@@ -1651,7 +1940,7 @@ theorem In_append_iff (α : Type) (l l' : List α) (x : α) :
 --  examples in later chapters.) Hint: `not_true_iff_false`.
 
 theorem beq_neq_false (n m : Nat) : (n == m) = false ↔ n ≠ m := by
-  sorry
+  rw [←not_true_iff_false, Ne, beq_eq_true]
 
 --  ### Functional Extensionality
 
