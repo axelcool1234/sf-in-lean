@@ -381,7 +381,14 @@ def Collatz' : Prop := ∀ (n : Nat), n ≠ 0 → CollatzStepMulti n 1
 --  N.B. The reflexive, symmetric, and transitive closure of a relation is
 --  also called its *equivalence closure*.
 
---  FILL IN HERE
+inductive ReflSymmTransGen {α : Type} (r : α → α → Prop) : α → α → Prop where
+  | step {x y : α} (h : r x y) : ReflSymmTransGen r x y
+  | symm {x y : α} (h : r x y) : ReflSymmTransGen r y x
+  | refl {x : α} : ReflSymmTransGen r x x
+  | trans {x y z : α}
+    (h₁ : ReflSymmTransGen r x y)
+    (h₂ : ReflSymmTransGen r y z) :
+    ReflSymmTransGen r x z
 
 --  ### Example: Permutations
 
@@ -431,6 +438,21 @@ inductive Perm3 {α : Type} : List α → List α → Prop where
 --  ### Exercise (1 star): perm (Optional, Manually graded) ⭐
 
 --  According to this definition, is `[1, 2, 3]` a permutation of itself?
+
+theorem perm3_self {α : Type} {x y z : α} : Perm3 [x, y, z] [x, y, z] := by
+  /- have h : Perm3 [x, y, z] [y, x, z] := Perm3.swap12 -/
+  /- have h': Perm3 [y, x, z] [y, z, x] := Perm3.swap23 -/
+  /- have h'' : Perm3 [y, z, x] [z, y, x] := Perm3.swap12 -/
+  /- have h''' : Perm3 [z, y, x] [z, x, y] := Perm3.swap23 -/
+  /- have h'''' : Perm3 [z, x, y] [x, z, y] := Perm3.swap12 -/
+  /- have h''''' : Perm3 [x, z, y] [x, y, z] := Perm3.swap23 -/
+  /- have hTrans : Perm3 [x, y, z] [y, z, x] := Perm3.trans h h' -/
+  /- have hTrans' : Perm3 [x, y, z] [z, y, x] := Perm3.trans hTrans h'' -/
+  /- have hTrans'' : Perm3 [x, y, z] [z, x, y] := Perm3.trans hTrans' h''' -/
+  /- have hTrans''' : Perm3 [x, y, z] [x, z, y] := Perm3.trans hTrans'' h'''' -/
+  /- have hTrans'''' : Perm3 [x, y, z] [x, y, z] := Perm3.trans hTrans''' h''''' -/
+  /- exact hTrans'''' -/
+  apply Perm3.trans Perm3.swap12 Perm3.swap12
 
 --  ### Example: Evenness (yet again)
 
@@ -590,7 +612,13 @@ theorem plus4 (n : Nat) (h : Even n) : Even (4 + n) := by
 --  ### Exercise (1 star): double ⭐
 
 theorem double (n : Nat) : Even n.double := by
-  sorry
+  induction n with
+  | zero => 
+    rw [Nat.double]
+    exact Even.zero
+  | succ n ih =>
+    rw [Nat.double]
+    exact Even.succ_succ ih
 
 --  (End of exercise)
 
@@ -627,10 +655,10 @@ theorem rev' : Perm3 [1, 2, 3] [3, 2, 1] := by
 --  ### Exercise (1 star): Perm3 ⭐
 
 theorem ex1 : Perm3 [1, 2, 3] [2, 3, 1] := by
-  sorry
+  apply trans swap12 swap23
 
 theorem refl (α : Type) (a b c : α) : Perm3 [a, b, c] [a, b, c] := by
-  sorry
+  apply trans swap12 swap12
 
 --  (End of exercise)
 
@@ -692,7 +720,9 @@ namespace LePlayground
 
 theorem le_inversion (n m : Nat) (h : n ≤ m) :
     (n = m) ∨ (∃ m', m = m' + 1 ∧ n ≤ m') := by
-  sorry
+  cases h with
+  | refl => left; rfl
+  | @step m h' => right; exists m
 
 --  (End of exercise)
 
@@ -764,14 +794,21 @@ example : ¬ Even 1 := by
 --  can also prove it using the inversion lemma.)
 
 theorem Even.of_add_four {n : Nat} (h : Even (n + 4)) : Even n := by
-  sorry
+  inversion h with
+  | succ_succ h => 
+    inversion h
+    assumption
 
 --  ### Exercise (1 star): even5_nonsense ⭐
 
 --  Prove the following result using `inversion`.
 
 theorem Even.even5_nonsense (h : Even 5) : 2 + 2 = 9 := by
-  sorry
+  inversion h with
+  | succ_succ h => 
+    inversion h with
+    | succ_succ h =>
+      inversion h
 
 --  (End of exercise)
 
@@ -915,14 +952,25 @@ theorem Even.iff_nat_even (n : Nat) : Even n ↔ Nat.Even n := by
 --  ### Exercise (2 stars): Even.add ⭐⭐
 
 theorem Even.add (n m : Nat) (hn : Even n) (hm : Even m) : Even (n + m) := by
-  sorry
+  induction hn with
+  | zero => rw [Nat.zero_add]; exact hm
+  | succ_succ h ih =>
+    rw [Nat.add_comm, Nat.add_succ, Nat.add_succ, Nat.add_comm]
+    apply Even.succ_succ
+    exact ih
 
 --  ### Exercise (3 stars): Even.of_add_left (Advanced) ⭐⭐⭐
 
 theorem Even.of_add_left (n m : Nat) (h : Even (n + m)) (hn : Even n) : Even m := by
   /- Hint: There are two pieces of evidence you could attempt to induct upon
       here. If one doesn't work, try the other. -/
-  sorry
+  induction hn with
+  | zero => rw [Nat.zero_add] at h; exact h
+  | succ_succ h ih => 
+    rw [Nat.add_comm, Nat.add_succ, Nat.add_succ, Nat.add_comm] at h
+    inversion h
+    apply ih
+    assumption
 
 --  ### Exercise (3 stars): add_of_add_left (Optional) ⭐⭐⭐
 
@@ -934,7 +982,13 @@ theorem Even.add_of_add_left (n m k : Nat)
     (hₙₘ : Even (n + m))
     (hₙₖ : Even (n + k)) :
     Even (m + k) := by
-  sorry
+  have hₙₘₙₖ := Even.add _ _ hₙₘ hₙₖ
+  rw [Nat.add_add_add_comm] at hₙₘₙₖ 
+  have hₙₙ := Even.double n
+  rw [Nat.double_add] at hₙₙ
+  apply of_add_left (n + n)
+  · exact hₙₘₙₖ 
+  · exact hₙₙ
 
 --  (End of exercise)
 
@@ -965,8 +1019,28 @@ inductive List.In' {α : Type} (x : α) : List α → Prop
 --  ### Exercise (2 stars): in_mem ⭐⭐
 
 theorem List.in_iff_mem {α} (x : α) (l : List α) : List.In x l ↔ x ∈ l := by
-  sorry
-
+  constructor
+  · intro h
+    induction l with
+    | nil => contradiction
+    | cons head tail ih =>
+      rw [List.In_cons] at h
+      obtain h | h := h
+      · subst h
+        constructor
+      · constructor
+        exact ih h
+  · intro h
+    induction h with
+    | head =>
+      rw [List.In_cons]
+      left
+      rfl
+    | tail =>
+      rw [List.In_cons]
+      right
+      assumption
+      
 --  (End of exercise)
 
 --  The characterizing lemmas for `∈` are called `List.mem_nil_iff` and
@@ -1028,7 +1102,22 @@ inductive Even' : Nat → Prop where
 --  with constructors of inductively defined propositions.
 
 theorem Even'.iff_Even n : Even' n ↔ Even n := by
-  sorry
+  constructor
+  · intro h
+    induction h with
+    | zero => constructor
+    | two => constructor; constructor
+    | add =>
+      apply Even.add
+      · assumption
+      · assumption
+  · intro h
+    induction h with
+    | zero => constructor
+    | succ_succ =>
+      constructor
+      · assumption
+      · constructor
 
 --  (End of exercise)
 
@@ -1078,13 +1167,36 @@ example (hIn : x ∈ [1, 2, 3]) : x ∈ [2, 1, 3] := by
 
 theorem In {α} (x : α) (l₁ l₂ : List α)
     (hPerm : Perm3 l₁ l₂) (hIn : x ∈ l₁) : x ∈ l₂ := by
-  sorry
+  induction hPerm with
+  | swap12 => 
+    rw [List.mem_cons, List.mem_cons, List.mem_cons] at *
+    obtain h | h | h | h := hIn
+    · right; left; assumption
+    · left; assumption
+    · right; right; left; assumption
+    · contradiction
+  | swap23 => 
+    rw [List.mem_cons, List.mem_cons, List.mem_cons] at *
+    obtain h | h | h | h := hIn
+    · left; assumption
+    · right; right; left; assumption
+    · right; left; assumption
+    · right; right; right; assumption
+  | trans h₁₂ h₂₃ h₁₂_ih h₂₃_ih =>
+    apply h₂₃_ih
+    apply h₁₂_ih
+    exact hIn
 
 --  ### Exercise (1 star): Perm3_NotIn (Optional) ⭐
 
 theorem NotIn {α} (x : α) (l₁ l₂ : List α)
     (hPerm : Perm3 l₁ l₂) (hIn : x ∉ l₁) : x ∉ l₂ := by
-  sorry
+  intro h
+  apply hIn
+  apply symm at hPerm
+  apply In
+  · exact hPerm
+  · exact h
 
 --  ### Exercise (2 stars): NotPerm3 (Optional) ⭐⭐
 
@@ -1092,7 +1204,12 @@ theorem NotIn {α} (x : α) (l₁ l₂ : List α)
 --  the lemmas above, like `Perm3.In`, can be useful for this.
 
 theorem Not : ¬ Perm3 [1, 2, 3] [1, 2, 4] := by
-  sorry
+  intro h
+  apply NotIn 4
+  · apply h
+  · intro h'
+    contradiction
+  · trivial
 
 end Perm3
 
@@ -1113,42 +1230,145 @@ namespace LePlayground
 --  ### Exercise (3 stars): le_facts ⭐⭐⭐
 
 theorem le_trans (m n k : Nat) (h₁ : m ≤ n) (h₂ : n ≤ k) : m ≤ k := by
-  sorry
+  induction h₂ with
+  | refl => assumption
+  | step h₂ ih =>
+    constructor
+    assumption
+
 
 theorem zero_le (n : Nat) : 0 ≤ n := by
-  sorry
+  induction n with
+  | zero => constructor
+  | succ n ih => 
+    constructor
+    assumption
 
 theorem succ_le_succ (n m : Nat) (h : n ≤ m) : n + 1 ≤ m + 1 := by
-  sorry
+  induction h with
+  | refl => constructor
+  | step h ih =>
+    constructor
+    assumption
 
 theorem le_of_succ_le_succ (n m : Nat) (h : n + 1 ≤ m + 1) : n ≤ m := by
-  sorry
+  inversion h with
+  | refl => constructor
+  | step =>
+    apply le_trans n (n + 1) m
+    · constructor
+      constructor
+    · assumption
 
 theorem le_not_succ_le_self (n : Nat) : ¬ (n + 1 ≤ n) := by
-  sorry
+  intro h
+  induction n with
+  | zero => contradiction
+  | succ n ih =>
+    apply ih
+    apply le_of_succ_le_succ
+    assumption
 
 theorem le_add_right (n m : Nat) : n ≤ n + m := by
-  sorry
+  induction n with
+  | zero => 
+    rw [Nat.zero_add]
+    apply zero_le
+  | succ n ih =>
+    rw [Nat.add_right_comm]
+    apply succ_le_succ
+    assumption
 
 --  ### Exercise (2 stars): le_facts1 ⭐⭐
 
 theorem le_and_le_of_add_le (n₁ n₂ m : Nat) (h : n₁ + n₂ ≤ m) : n₁ ≤ m ∧ n₂ ≤ m := by
-  sorry
+  induction h with
+  | refl =>
+    constructor
+    · apply le_add_right
+    · rw [Nat.add_comm]
+      apply le_add_right
+  | step h ih =>
+    constructor
+    · constructor
+      apply ih.left
+    · constructor
+      apply ih.right
+  /- constructor -/
+  /- · apply le_trans _ (n₁ + n₂) _ -/
+    /- · cases n₂ with -/
+    /- | zero => constructor -/
+    /- | succ => -/
+      /- apply le_add_right -/
+    /- · assumption -/
+  /- · cases n₁ with -/
+  /- | zero =>  -/
+    /- rw [Nat.zero_add] at h -/
+    /- assumption -/
+  /- | succ n₁ => -/
+    /- apply le_trans _ (n₁ + 1 + n₂) _ -/
+    /- · rw [Nat.add_comm] -/
+      /- apply le_add_right -/
+    /- · assumption -/
+
 
 theorem le_or_le_of_add_le_add (n m p q : Nat) (h : n + m ≤ p + q) : n ≤ p ∨ m ≤ q := by
   /- Hint: May be easiest to prove by induction on `n`. -/
-  sorry
+  induction n generalizing m p q with
+  | zero => left; apply zero_le
+  | succ n ih =>
+    cases p with
+    | zero =>
+      obtain ⟨h', h''⟩ := le_and_le_of_add_le _ _ _ h
+      rw [Nat.zero_add] at *
+      right
+      exact h''
+    | succ p =>
+      rw [Nat.add_right_comm, Nat.add_right_comm p] at h
+      apply le_of_succ_le_succ at h
+      apply ih at h
+      obtain h | h := h
+      · left
+        apply succ_le_succ
+        assumption
+      · right
+        assumption
 
 --  ### Exercise (2 stars): plus_le_facts2 ⭐⭐
 
 theorem add_le_add_left (n m p : Nat) (h : n ≤ m) : p + n ≤ p + m := by
-  sorry
+  induction h with
+  | refl => constructor
+  | step h ih =>
+    apply Le.step at ih
+    exact ih
 
 theorem add_le_add_right (n m p : Nat) (h : n ≤ m) : n + p ≤ m + p := by
-  sorry
+  induction h with
+  | refl => constructor
+  | step h ih =>
+    apply Le.step at ih
+    rw [Nat.add_right_comm]
+    exact ih
 
 theorem le_add_right_of_le (n m p : Nat) (h : n ≤ m) : n ≤ m + p := by
-  sorry
+    induction p with
+    | zero => assumption
+    | succ p ih =>
+      apply Le.step at ih
+      exact ih
+  /- induction n generalizing p with -/
+  /- | zero => apply zero_le -/
+  /- | succ n ih => -/
+    /- cases p with -/
+    /- | zero => assumption -/
+    /- | succ p => -/
+      /- apply succ_le_succ -/
+      /- apply ih -/
+      /- apply Le.step at h -/
+      /- apply le_of_succ_le_succ at h -/
+      /- exact h -/
+    
 
 --  #### Facts about `<` and `≥`
 
@@ -1177,13 +1397,57 @@ theorem lt_not_lt_zero (n : Nat) : ¬ n < 0 := by
   inversion h
 
 theorem lt_or_ge (n m : Nat) : n < m ∨ n ≥ m := by
-  sorry
+  rw [Lt, Ge]
+  induction m generalizing n with
+  | zero =>
+    right
+    apply zero_le
+  | succ m ih =>
+    cases n with
+    | zero =>
+      left
+      apply succ_le_succ
+      apply zero_le
+    | succ n =>
+      obtain h | h := ih n
+      · left
+        apply succ_le_succ
+        exact h
+      · right
+        apply succ_le_succ
+        exact h
 
 theorem le_of_lt (n m : Nat) (h : n < m) : n ≤ m := by
-  sorry
+  apply le_of_succ_le_succ
+  constructor
+  exact h
+  /- rw [Lt] at h -/
+  /- induction n generalizing m with -/
+  /- | zero => apply zero_le -/
+  /- | succ n ih => -/
+    /- cases m with -/
+    /- | zero => contradiction -/
+    /- | succ m => -/
+      /- apply succ_le_succ -/
+      /- apply le_of_succ_le_succ at h -/
+      /- apply ih -/
+      /- exact h -/
 
 theorem lt_and_lt_of_add_lt (n₁ n₂ m : Nat) (h : n₁ + n₂ < m) : n₁ < m ∧ n₂ < m := by
-  sorry
+  rw [Lt] at *
+  constructor
+  · apply le_trans _ (n₁ + n₂ + 1) _
+    · apply succ_le_succ
+      apply le_add_right_of_le
+      constructor
+    · exact h
+  · rw [Lt] 
+    apply le_trans _ (n₁ + n₂ + 1) _
+    · rw [Nat.add_comm n₁]
+      apply succ_le_succ
+      apply le_add_right_of_le
+      constructor
+    · exact h
 
 --  #### Relating `Le` and `Nat.ble`
 
@@ -1192,21 +1456,48 @@ theorem lt_and_lt_of_add_lt (n₁ n₂ m : Nat) (h : n₁ + n₂ < m) : n₁ < m
 --  ### Exercise (4 stars): ble (Optional) ⭐⭐⭐⭐
 
 theorem le_of_ble_eq_true (n m : Nat) (h : Nat.ble n m = true) : n ≤ m := by
-  sorry
+  induction n generalizing m with
+  | zero => apply zero_le
+  | succ n ih =>
+    cases m with
+    | zero => contradiction
+    | succ m =>
+      apply succ_le_succ
+      apply ih
+      exact h
 
 theorem ble_eq_true_of_le n m (h : n ≤ m) : Nat.ble n m = true := by
-  sorry
+  induction h with
+  | refl => apply Nat.ble_self_eq_true
+  | step h ih =>
+    apply Nat.ble_succ_eq_true
+    exact ih
 
 --  Hint: The next two can easily be proved without using `induction`.
 
 theorem ble_eq (n m : Nat) : Nat.ble n m = true ↔ n ≤ m := by
-  sorry
+  constructor
+  · apply le_of_ble_eq_true
+  · apply ble_eq_true_of_le
 
 theorem ble_trans (n m k : Nat) :
     Nat.ble n m = true →
     Nat.ble m k = true →
     Nat.ble n k = true := by
-  sorry
+  rw [ble_eq, ble_eq, ble_eq]
+  apply le_trans
+  /- intro h₁ h₂ -/
+  /- rw [ble_eq_true_of_le] at * -/
+  /- · apply le_of_ble_eq_true -/
+    /- exact h₁ -/
+  /- · apply le_of_ble_eq_true -/
+    /- exact h₂ -/
+  /- · apply le_trans n m k -/
+    /- · apply le_of_ble_eq_true -/
+      /- exact h₁ -/
+    /- · apply le_of_ble_eq_true -/
+      /- exact h₂ -/
+  
 
 --  (End of exercise)
 
@@ -1231,21 +1522,30 @@ inductive R : Nat → Nat → Nat → Prop where
 --
 --  - `R 1 1 2`
 --  - `R 2 2 6`
+example : R 1 1 2 := by
+  apply R.c2
+  apply R.c3
+  apply R.c1
+
+-- We can't prove `R 2 2 6`
+
 --
 --  2. If we dropped constructor `c5` from the definition of `R`, would the
 --     set of provable propositions change? Briefly (one sentence) explain
 --     your answer.
+-- No.
 --  3. If we dropped constructor `c4` from the definition of `R`, would the
 --     set of provable propositions change? Briefly (one sentence) explain
 --     your answer.
+-- No.
 
 --  ### Exercise (3 stars): R_fact (Optional) ⭐⭐⭐
 
 --  The relation `R` above actually encodes a familiar function. Figure out
 --  which function; then state and prove this equivalence in Lean.
 
-def funR : Nat → Nat → Nat
-  := sorry
+def funR : Nat → Nat → Nat := by
+  sorry
 
 theorem funR_iff_R {m n k : Nat} : funR m n = k ↔ R m n k := by
   sorry
